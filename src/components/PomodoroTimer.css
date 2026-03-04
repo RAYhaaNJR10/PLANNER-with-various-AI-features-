@@ -1,0 +1,197 @@
+/* Floating minimized bubble */
+.pomo-mini {
+    position: fixed;
+    bottom: 80px;
+    right: 20px;
+    z-index: 999;
+    background: var(--accent);
+    color: #fff;
+    border: none;
+    border-radius: 24px;
+    padding: 10px 18px;
+    font-size: 0.95rem;
+    font-weight: 700;
+    font-family: inherit;
+    cursor: pointer;
+    box-shadow: 0 4px 20px var(--accent-shadow);
+    transition: all 0.2s ease;
+    animation: floatUp 0.3s ease;
+}
+
+.pomo-mini:hover {
+    transform: translateY(-3px) scale(1.05);
+    box-shadow: 0 8px 30px var(--accent-shadow);
+}
+
+/* Expanded widget */
+.pomo-widget {
+    position: fixed;
+    bottom: 80px;
+    right: 20px;
+    z-index: 999;
+    background: var(--card);
+    border-radius: 24px;
+    box-shadow: 0 8px 40px rgba(0, 0, 0, 0.2);
+    padding: 20px;
+    width: 280px;
+    border: 1px solid var(--border);
+    animation: floatUp 0.3s ease;
+}
+
+.pomo-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 14px;
+}
+
+.pomo-title {
+    font-weight: 800;
+    font-size: 1rem;
+    color: var(--text);
+}
+
+.pomo-icon-btn {
+    width: 32px;
+    height: 32px;
+    border: 1px solid var(--border);
+    background: var(--bg);
+    border-radius: 8px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-secondary);
+    transition: all 0.2s ease;
+    font-family: inherit;
+}
+
+.pomo-icon-btn:hover {
+    background: var(--hover);
+    color: var(--text);
+}
+
+.pomo-mode-tabs {
+    display: flex;
+    gap: 4px;
+    margin-bottom: 16px;
+    background: var(--bg);
+    border-radius: 12px;
+    padding: 3px;
+}
+
+.pomo-mode-tab {
+    flex: 1;
+    padding: 6px 4px;
+    border-radius: 9px;
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    font-size: 0.7rem;
+    font-weight: 600;
+    font-family: inherit;
+    color: var(--text-secondary);
+    transition: all 0.2s ease;
+    white-space: nowrap;
+}
+
+.pomo-mode-tab.active {
+    background: var(--card);
+    color: var(--accent);
+    box-shadow: var(--shadow-sm);
+}
+
+.pomo-ring-wrap {
+    position: relative;
+    width: 120px;
+    height: 120px;
+    margin: 0 auto 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.pomo-ring {
+    width: 100%;
+    height: 100%;
+    position: absolute;
+    top: 0;
+    left: 0;
+}
+
+.pomo-time {
+    font-size: 1.7rem;
+    font-weight: 800;
+    color: var(--text);
+    letter-spacing: -1px;
+}
+
+.pomo-label-input {
+    width: 100%;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    background: var(--bg);
+    color: var(--text);
+    padding: 8px 12px;
+    font-size: 0.8rem;
+    font-family: inherit;
+    outline: none;
+    margin-bottom: 12px;
+    box-sizing: border-box;
+}
+
+.pomo-label-input:focus {
+    border-color: var(--accent);
+}
+
+.pomo-controls {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+}
+
+.pomo-play-btn {
+    width: 52px;
+    height: 52px;
+    border-radius: 50%;
+    border: none;
+    background: var(--accent);
+    color: #fff;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 4px 15px var(--accent-shadow);
+    transition: all 0.2s ease;
+    font-family: inherit;
+}
+
+.pomo-play-btn:hover {
+    transform: scale(1.08);
+}
+
+@keyframes floatUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@media (max-width: 768px) {
+
+    .pomo-mini,
+    .pomo-widget {
+        bottom: 72px;
+        right: 12px;
+    }
+
+    .pomo-widget {
+        width: 260px;
+    }
+}

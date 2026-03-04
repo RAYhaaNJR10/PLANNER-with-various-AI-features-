@@ -1,0 +1,118 @@
+.calendar-page {
+    animation: fadeIn 0.3s ease;
+}
+
+.cal-container {
+    background: var(--card);
+    border-radius: 20px;
+    padding: 28px;
+    box-shadow: var(--shadow-md);
+    max-width: 700px;
+}
+
+.cal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 24px;
+}
+
+.cal-month-title {
+    font-size: 1.4rem;
+    font-weight: 700;
+    color: var(--text);
+}
+
+.cal-nav-btn {
+    width: 40px;
+    height: 40px;
+    border-radius: 12px;
+    border: 1px solid var(--border);
+    background: var(--bg);
+    color: var(--text);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-size: 1.2rem;
+}
+
+.cal-nav-btn:hover {
+    background: var(--accent);
+    color: white;
+    border-color: var(--accent);
+    transform: scale(1.05);
+}
+
+.cal-weekdays {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 4px;
+    margin-bottom: 8px;
+}
+
+.cal-weekday {
+    text-align: center;
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    padding: 8px 0;
+}
+
+.cal-body {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.cal-row {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 4px;
+}
+
+.cal-cell {
+    aspect-ratio: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 12px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    position: relative;
+}
+
+.cal-cell:hover:not(.cal-cell--disabled) {
+    background: var(--hover);
+    transform: scale(1.1);
+}
+
+.cal-cell--disabled {
+    opacity: 0.3;
+    cursor: default;
+}
+
+.cal-cell--today {
+    background: var(--accent-bg);
+    font-weight: 700;
+}
+
+.cal-cell--today .cal-cell-number {
+    color: var(--accent);
+}
+
+.cal-cell-number {
+    font-size: 0.95rem;
+    font-weight: 500;
+    color: var(--text);
+}
+
+@media (max-width: 768px) {
+    .cal-container {
+        padding: 16px;
+        border-radius: 16px;
+    }
+}

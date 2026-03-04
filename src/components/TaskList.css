@@ -1,0 +1,274 @@
+.tasklist-page {
+    animation: fadeIn 0.3s ease;
+}
+
+.task-progress-bar {
+    height: 6px;
+    background: var(--border);
+    border-radius: 100px;
+    margin-bottom: 24px;
+    overflow: hidden;
+}
+
+.task-progress-fill {
+    height: 100%;
+    background: var(--gradient-brand);
+    border-radius: 100px;
+    transition: width 0.5s ease;
+}
+
+.task-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.task-card {
+    display: flex;
+    align-items: flex-start;
+    gap: 16px;
+    padding: 16px 20px;
+    background: var(--card);
+    border-radius: 16px;
+    box-shadow: var(--shadow-sm);
+    transition: all 0.2s ease;
+    border: 1px solid var(--border);
+}
+
+.task-card:hover {
+    box-shadow: var(--shadow-md);
+    transform: translateY(-2px);
+}
+
+.task-card--done {
+    opacity: 0.6;
+}
+
+.task-card--done .task-title {
+    text-decoration: line-through;
+    color: var(--text-secondary);
+}
+
+.task-check {
+    width: 28px;
+    height: 28px;
+    min-width: 28px;
+    border-radius: 8px;
+    border: 2px solid var(--border);
+    background: transparent;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+    color: white;
+    margin-top: 2px;
+}
+
+.task-check:hover {
+    border-color: var(--accent);
+    background: var(--accent-bg);
+}
+
+.task-check--checked {
+    background: var(--accent);
+    border-color: var(--accent);
+}
+
+.task-content {
+    flex: 1;
+    min-width: 0;
+}
+
+.task-title {
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--text);
+    margin: 0 0 4px;
+    transition: all 0.2s ease;
+}
+
+.task-desc {
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+    margin: 0 0 8px;
+    line-height: 1.4;
+}
+
+.task-meta {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.task-priority,
+.task-label {
+    font-size: 0.75rem;
+    font-weight: 600;
+    padding: 4px 10px;
+    border-radius: 100px;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.task-actions {
+    display: flex;
+    gap: 4px;
+    opacity: 0;
+    transition: opacity 0.2s ease;
+}
+
+.task-card:hover .task-actions {
+    opacity: 1;
+}
+
+.task-action-btn {
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    border: none;
+    background: var(--hover);
+    color: var(--text-secondary);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+}
+
+.task-action-btn:hover {
+    background: var(--accent-bg);
+    color: var(--accent);
+}
+
+.task-action-btn--danger:hover {
+    background: #fee2e2;
+    color: #ef4444;
+}
+
+.empty-state {
+    text-align: center;
+    padding: 60px 20px;
+    color: var(--text-secondary);
+}
+
+.empty-emoji {
+    font-size: 48px;
+    display: block;
+    margin-bottom: 16px;
+}
+
+.empty-state h3 {
+    font-size: 1.2rem;
+    margin: 0 0 8px;
+    color: var(--text);
+}
+
+.empty-state p {
+    margin: 0;
+    font-size: 0.9rem;
+}
+
+/* Magic Wand button */
+.task-wand-btn:hover {
+    background: #fef3c7;
+    color: #d97706;
+}
+
+/* Sub-task list */
+.subtask-toggle {
+    font-size: 0.72rem;
+    padding: 3px 8px;
+    border-radius: 99px;
+    border: 1px solid var(--border);
+    background: var(--bg);
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-family: inherit;
+}
+
+.subtask-toggle:hover {
+    background: var(--hover);
+}
+
+.subtask-list {
+    margin-top: 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding: 10px 12px;
+    background: var(--bg);
+    border-radius: 10px;
+    border: 1px solid var(--border);
+}
+
+.subtask-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 0.85rem;
+    color: var(--text);
+    transition: opacity 0.2s;
+}
+
+.subtask-item--done {
+    opacity: 0.5;
+    text-decoration: line-through;
+    color: var(--text-secondary);
+}
+
+.subtask-check {
+    width: 18px;
+    height: 18px;
+    min-width: 18px;
+    border-radius: 5px;
+    border: 1.5px solid var(--border);
+    background: transparent;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    transition: all 0.2s ease;
+    font-family: inherit;
+}
+
+.subtask-check--done {
+    background: var(--accent);
+    border-color: var(--accent);
+}
+
+/* Markdown task description */
+.task-desc--markdown {
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+    margin: 0 0 8px;
+    line-height: 1.5;
+}
+
+.task-desc--markdown p {
+    margin: 0 0 4px;
+}
+
+.task-desc--markdown ul,
+.task-desc--markdown ol {
+    margin: 4px 0;
+    padding-left: 18px;
+}
+
+.task-desc--markdown li {
+    margin: 2px 0;
+}
+
+.task-desc--markdown strong {
+    color: var(--text);
+}
+
+.task-desc--markdown code {
+    background: var(--bg);
+    padding: 1px 5px;
+    border-radius: 4px;
+    font-size: 0.8em;
+}
