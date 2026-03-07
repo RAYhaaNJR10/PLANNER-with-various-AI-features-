@@ -10,6 +10,7 @@ const TaskForm = ({ date, labels, task, onClose }) => {
     const [title, setTitle] = useState('');
     const [description, setDescription] = useState('');
     const [priority, setPriority] = useState('medium');
+    const [recurrence, setRecurrence] = useState('none');
     const [labelIds, setLabelIds] = useState([]);
     const [newLabelName, setNewLabelName] = useState('');
     const [newLabelIcon, setNewLabelIcon] = useState('🏷️');
@@ -22,6 +23,7 @@ const TaskForm = ({ date, labels, task, onClose }) => {
             setTitle(task.title || '');
             setDescription(task.description || '');
             setPriority(task.priority || 'medium');
+            setRecurrence(task.recurrence || 'none');
 
             // Handle backwards compatibility with older single labelId string
             if (task.labelIds) setLabelIds(task.labelIds);
@@ -40,6 +42,7 @@ const TaskForm = ({ date, labels, task, onClose }) => {
                 title: title.trim(),
                 description: description.trim(),
                 priority,
+                recurrence,
                 labelIds,
                 date,
             };
@@ -145,7 +148,7 @@ const TaskForm = ({ date, labels, task, onClose }) => {
                     </div>
 
                     <div className="form-row">
-                        <div className="form-group">
+                        <div className="form-group" style={{ flex: 1 }}>
                             <label className="form-label">Priority</label>
                             <div className="priority-selector">
                                 {['low', 'medium', 'high'].map((p) => (
@@ -159,6 +162,18 @@ const TaskForm = ({ date, labels, task, onClose }) => {
                                     </button>
                                 ))}
                             </div>
+                        </div>
+                        <div className="form-group" style={{ flex: 1 }}>
+                            <label className="form-label">Recurrence</label>
+                            <select
+                                className="form-input"
+                                value={recurrence}
+                                onChange={(e) => setRecurrence(e.target.value)}
+                                style={{ height: '42px' }}
+                            >
+                                <option value="none">Does not repeat</option>
+                                <option value="daily">Daily</option>
+                            </select>
                         </div>
                     </div>
 

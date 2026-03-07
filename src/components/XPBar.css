@@ -44,3 +44,71 @@
     color: var(--text-secondary);
     text-align: center;
 }
+
+.streak-popover {
+    position: absolute;
+    top: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    margin-top: 8px;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 12px;
+    width: max-content;
+    min-width: 180px;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+    z-index: 1000;
+}
+
+.streak-popover-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 8px;
+}
+
+.streak-popover-header h4 {
+    margin: 0;
+    font-size: 0.85rem;
+    color: var(--text);
+}
+
+.streak-popover-close {
+    background: none;
+    border: none;
+    color: var(--text-secondary);
+    cursor: pointer;
+    font-size: 0.9rem;
+    padding: 2px 4px;
+    border-radius: 4px;
+}
+
+.streak-popover-close:hover {
+    background: var(--border);
+}
+
+.streak-popover-stats {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.streak-stat {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.8rem;
+    align-items: center;
+    gap: 16px;
+}
+
+.streak-stat-label {
+    color: var(--text-secondary);
+}
+
+.streak-stat-value {
+    color: var(--text);
+    font-weight: bold;
+}

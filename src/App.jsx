@@ -12,6 +12,7 @@ import LoginPage from './components/LoginPage';
 import PomodoroTimer from './components/PomodoroTimer';
 import SharedSubjectView from './components/SharedSubjectView';
 import Leaderboard from './components/Leaderboard';
+import Shop from './components/Shop';
 import PrivacyPolicy from './components/PrivacyPolicy';
 import TermsOfService from './components/TermsOfService';
 import './App.css';
@@ -69,6 +70,7 @@ const AppContent = () => {
           <Route path="/stats" element={<StatsOverview />} />
           <Route path="/habits" element={<HabitsTracker />} />
           <Route path="/groups" element={<Leaderboard />} />
+          <Route path="/shop" element={<Shop />} />
           <Route path="/share/:shareId" element={<SharedSubjectView />} />
         </Routes>
       </main>

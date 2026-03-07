@@ -5,7 +5,7 @@ import { signOut } from '../services/auth';
 import XPBar from './XPBar';
 import {
     FiSun, FiMoon, FiCalendar, FiCheckSquare,
-    FiTag, FiBook, FiBarChart2, FiLogOut, FiRepeat, FiUsers
+    FiTag, FiBook, FiBarChart2, FiLogOut, FiRepeat, FiUsers, FiShoppingCart
 } from 'react-icons/fi';
 import './Sidebar.css';
 
@@ -19,6 +19,7 @@ const Sidebar = () => {
         { to: '/subjects', icon: <FiBook />, label: 'Subjects' },
         { to: '/groups', icon: <FiUsers />, label: 'Study Groups' },
         { to: '/habits', icon: <FiRepeat />, label: 'Habits' },
+        { to: '/shop', icon: <FiShoppingCart />, label: 'XP Shop' },
         { to: '/stats', icon: <FiBarChart2 />, label: 'Stats' },
     ];
 

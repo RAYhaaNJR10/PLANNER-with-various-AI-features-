@@ -2,7 +2,8 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { logPomodoroSession } from '../services/pomodoroService';
 import { awardXP, updateStreak } from '../services/gamificationService';
-import { FiPlay, FiPause, FiRotateCcw, FiMinus, FiMaximize2, FiMusic, FiSkipForward, FiRepeat, FiVolume2, FiVolumeX, FiMove, FiChevronDown, FiChevronUp, FiSquare } from 'react-icons/fi';
+import { updatePresence } from '../services/presenceService';
+import { FiPlay, FiPause, FiRotateCcw, FiMinus, FiMaximize2, FiMinimize2, FiMusic, FiSkipForward, FiRepeat, FiVolume2, FiVolumeX, FiMove, FiChevronDown, FiChevronUp, FiSquare } from 'react-icons/fi';
 import './PomodoroTimer.css';
 
 const MODES = [
@@ -19,6 +20,7 @@ const PomodoroTimer = () => {
     const [seconds, setSeconds] = useState(MODES[0].duration * 60);
     const [running, setRunning] = useState(false);
     const [minimized, setMinimized] = useState(true);
+    const [isZenMode, setIsZenMode] = useState(false);
     const [label, setLabel] = useState('');
     const intervalRef = useRef(null);
     const startRef = useRef(null);
@@ -54,11 +56,20 @@ const PomodoroTimer = () => {
             duration: currentDuration,
             date: today,
         });
-        await awardXP(user.uid, currentDuration > 20 ? 20 : currentDuration);
+        await awardXP(user.uid, currentDuration);
         await updateStreak(user.uid);
     }, [user, modeIdx, label, currentDuration, mode]);
 
     useEffect(() => {
+        // Tab Title Sync
+        if (running) {
+            document.title = `(${fmt(seconds)}) ${mode.label.replace(/[^A-Za-z ]/g, '').trim()} - Planner`;
+            if (user) updatePresence(user.uid, true, mode.label, label);
+        } else {
+            document.title = 'Planner';
+            if (user) updatePresence(user.uid, false);
+        }
+
         if (running) {
             startRef.current = Date.now();
             setIsAudioPlaying(true); // Automatically play audio when timer starts
@@ -69,6 +80,8 @@ const PomodoroTimer = () => {
                         setRunning(false);
                         setIsAudioPlaying(false); // Pause audio when timer ends
                         handleSessionComplete();
+                        document.title = 'Planner'; // Revert on complete
+                        if (user) updatePresence(user.uid, false);
                         return 0;
                     }
                     return s - 1;
@@ -78,8 +91,12 @@ const PomodoroTimer = () => {
             clearInterval(intervalRef.current);
             setIsAudioPlaying(false); // Pause audio when timer pauses
         }
-        return () => clearInterval(intervalRef.current);
-    }, [running, handleSessionComplete]);
+        return () => {
+            clearInterval(intervalRef.current);
+            document.title = 'Planner';
+            if (user) updatePresence(user.uid, false).catch(e => console.error(e));
+        };
+    }, [running, handleSessionComplete, seconds, mode.label, user, label]);
 
     // Audio Sync Effect
     useEffect(() => {
@@ -168,7 +185,7 @@ const PomodoroTimer = () => {
                     duration: elapsedMinutes,
                     date: today,
                 }).then(() => {
-                    awardXP(user.uid, elapsedMinutes > 20 ? 20 : elapsedMinutes);
+                    awardXP(user.uid, elapsedMinutes);
                     updateStreak(user.uid);
                 });
             }
@@ -191,17 +208,22 @@ const PomodoroTimer = () => {
     }
 
     return (
-        <div className="pomo-widget">
+        <div className={`pomo - widget ${isZenMode ? 'zen-mode-active' : ''} `}>
             <div className="pomo-header">
                 <span className="pomo-title">🍅 Pomodoro</span>
-                <button className="pomo-icon-btn" onClick={() => setMinimized(true)}><FiMinus /></button>
+                <div style={{ display: 'flex', gap: '8px' }}>
+                    <button className="pomo-icon-btn" onClick={() => setIsZenMode(!isZenMode)} title={isZenMode ? "Exit Zen Mode" : "Enter Zen Mode"}>
+                        {isZenMode ? <FiMinimize2 /> : <FiMaximize2 />}
+                    </button>
+                    <button className="pomo-icon-btn" onClick={() => { setMinimized(true); setIsZenMode(false); }} title="Minimize"><FiMinus /></button>
+                </div>
             </div>
 
             <div className="pomo-mode-tabs">
                 {MODES.map((m, i) => (
                     <button
                         key={i}
-                        className={`pomo-mode-tab ${modeIdx === i ? 'active' : ''}`}
+                        className={`pomo - mode - tab ${modeIdx === i ? 'active' : ''} `}
                         onClick={() => switchMode(i)}
                     >
                         {m.label}
@@ -262,7 +284,7 @@ const PomodoroTimer = () => {
                 <button className="pomo-play-btn" onClick={() => setRunning(r => !r)}>
                     {running ? <FiPause size={22} /> : <FiPlay size={22} />}
                 </button>
-                <button className={`pomo-icon-btn ${isAudioPlaying ? 'active-audio' : ''}`} onClick={() => setIsAudioPlaying(!isAudioPlaying)}>
+                <button className={`pomo - icon - btn ${isAudioPlaying ? 'active-audio' : ''} `} onClick={() => setIsAudioPlaying(!isAudioPlaying)}>
                     {isAudioPlaying ? <FiVolume2 /> : <FiVolumeX />}
                 </button>
             </div>
@@ -279,7 +301,7 @@ const PomodoroTimer = () => {
                 {showPlaylist && (
                     <div className="pomo-playlist">
                         <div className="pomo-playlist-controls">
-                            <button className={`pomo-playlist-btn ${repeatMode ? 'active' : ''}`} onClick={() => setRepeatMode(!repeatMode)} title="Repeat Track">
+                            <button className={`pomo - playlist - btn ${repeatMode ? 'active' : ''} `} onClick={() => setRepeatMode(!repeatMode)} title="Repeat Track">
                                 <FiRepeat />
                             </button>
                             <button className="pomo-playlist-btn" onClick={nextTrack} title="Next Track">
@@ -291,7 +313,7 @@ const PomodoroTimer = () => {
                             {playlist.map((track, index) => (
                                 <div
                                     key={track.id}
-                                    className={`pomo-track-item ${index === currentTrackIndex ? 'playing' : ''}`}
+                                    className={`pomo - track - item ${index === currentTrackIndex ? 'playing' : ''} `}
                                     draggable
                                     onDragStart={(e) => dragStart(e, index)}
                                     onDragEnter={(e) => dragEnter(e, index)}

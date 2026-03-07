@@ -1,7 +1,9 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { createGroup, joinGroup, getUserGroups, getGroupLeaderboard } from '../services/groupService';
-import { FiUsers, FiPlus, FiUserPlus, FiAward, FiCopy } from 'react-icons/fi';
+import { subscribeToGroupPresence } from '../services/presenceService';
+import { FiUsers, FiPlus, FiUserPlus, FiAward, FiCopy, FiClock } from 'react-icons/fi';
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 import './Leaderboard.css';
 
 const Leaderboard = () => {
@@ -9,6 +11,7 @@ const Leaderboard = () => {
     const [groups, setGroups] = useState([]);
     const [activeGroup, setActiveGroup] = useState(null);
     const [leaderboard, setLeaderboard] = useState([]);
+    const [presence, setPresence] = useState({});
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
 
@@ -59,6 +62,21 @@ const Leaderboard = () => {
             }
         };
         fetchRankings();
+    }, [activeGroup]);
+
+    // Subscribe to Real-Time Presence
+    useEffect(() => {
+        if (!activeGroup || !activeGroup.members) {
+            setPresence({});
+            return;
+        }
+
+        const memberIds = activeGroup.members.map(m => m.uid);
+        const unsubscribe = subscribeToGroupPresence(memberIds, (data) => {
+            setPresence(data);
+        });
+
+        return () => unsubscribe();
     }, [activeGroup]);
 
     const handleCreateGroup = async () => {
@@ -213,37 +231,71 @@ const Leaderboard = () => {
                             {refreshing ? (
                                 <div style={{ textAlign: 'center', padding: '40px' }}><div className="spinner" /></div>
                             ) : (
-                                <div className="rankings-list">
-                                    {leaderboard.map((member, idx) => {
-                                        const isMe = member.uid === user.uid;
+                                <>
+                                    {/* Focus Time Graph */}
+                                    <div className="group-stats-card">
+                                        <h3 className="group-stats-title"><FiClock /> This Week's Focus Time (Mins)</h3>
+                                        <div style={{ width: '100%', height: 200, marginTop: '20px' }}>
+                                            <ResponsiveContainer width="100%" height="100%">
+                                                <BarChart data={leaderboard.map(m => ({
+                                                    name: m.displayName.split(' ')[0],
+                                                    focusMinutes: m.focusMinutes || 0,
+                                                    isMe: m.uid === user.uid
+                                                }))}>
+                                                    <XAxis dataKey="name" tick={{ fill: 'var(--text-secondary)' }} axisLine={false} tickLine={false} />
+                                                    <YAxis tick={{ fill: 'var(--text-secondary)' }} axisLine={false} tickLine={false} />
+                                                    <Tooltip cursor={{ fill: 'var(--hover)' }} contentStyle={{ background: 'var(--bg)', border: 'none', borderRadius: '8px', color: 'var(--text)' }} />
+                                                    <Bar dataKey="focusMinutes" radius={[4, 4, 0, 0]}>
+                                                        {
+                                                            leaderboard.map((m, index) => (
+                                                                <Cell key={`cell-${index}`} fill={m.uid === user.uid ? 'var(--accent)' : 'var(--text-secondary)'} opacity={m.uid === user.uid ? 1 : 0.4} />
+                                                            ))
+                                                        }
+                                                    </Bar>
+                                                </BarChart>
+                                            </ResponsiveContainer>
+                                        </div>
+                                    </div>
 
-                                        // Medals
-                                        let rankBadge = <div className="rank-badge rank-normal">{idx + 1}</div>;
-                                        if (idx === 0) rankBadge = <div className="rank-badge rank-gold">🥇</div>;
-                                        if (idx === 1) rankBadge = <div className="rank-badge rank-silver">🥈</div>;
-                                        if (idx === 2) rankBadge = <div className="rank-badge rank-bronze">🥉</div>;
+                                    <div className="rankings-list">
+                                        {leaderboard.map((member, idx) => {
+                                            const isMe = member.uid === user.uid;
 
-                                        return (
-                                            <div key={member.uid} className={`ranking-card ${isMe ? 'ranking-card--me' : ''}`}>
-                                                {rankBadge}
-                                                <img
-                                                    src={member.photoURL || `https://ui-avatars.com/api/?name=${encodeURIComponent(member.displayName)}&background=random`}
-                                                    alt={member.displayName}
-                                                    className="rank-avatar"
-                                                    referrerPolicy="no-referrer"
-                                                />
-                                                <div className="rank-info">
-                                                    <span className="rank-name">{member.displayName} {isMe && '(You)'}</span>
-                                                    <span className="rank-level">Level {member.level}</span>
+                                            // Medals
+                                            let rankBadge = <div className="rank-badge rank-normal">{idx + 1}</div>;
+                                            if (idx === 0) rankBadge = <div className="rank-badge rank-gold">🥇</div>;
+                                            if (idx === 1) rankBadge = <div className="rank-badge rank-silver">🥈</div>;
+                                            if (idx === 2) rankBadge = <div className="rank-badge rank-bronze">🥉</div>;
+
+                                            return (
+                                                <div key={member.uid} className={`ranking-card ${isMe ? 'ranking-card--me' : ''}`}>
+                                                    {rankBadge}
+                                                    <img
+                                                        src={member.photoURL || `https://ui-avatars.com/api/?name=${encodeURIComponent(member.displayName)}&background=random`}
+                                                        alt={member.displayName}
+                                                        className="rank-avatar"
+                                                        referrerPolicy="no-referrer"
+                                                    />
+                                                    <div className="rank-info">
+                                                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                                            <span className="rank-name">{member.displayName} {isMe && '(You)'}</span>
+                                                            {presence[member.uid]?.isStudying && (
+                                                                <span className="presence-tag" title="Currently studying!">
+                                                                    <span className="presence-dot"></span> Focusing on {presence[member.uid].subjectName || 'Task'}
+                                                                </span>
+                                                            )}
+                                                        </div>
+                                                        <span className="rank-level">Level {member.level}</span>
+                                                    </div>
+                                                    <div className="rank-score">
+                                                        <FiAward className="rank-icon" />
+                                                        <span className="rank-xp">{member.xp} XP</span>
+                                                    </div>
                                                 </div>
-                                                <div className="rank-score">
-                                                    <FiAward className="rank-icon" />
-                                                    <span className="rank-xp">{member.xp} XP</span>
-                                                </div>
-                                            </div>
-                                        );
-                                    })}
-                                </div>
+                                            );
+                                        })}
+                                    </div>
+                                </>
                             )}
                         </div>
                     )}

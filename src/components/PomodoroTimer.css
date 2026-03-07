@@ -325,3 +325,96 @@
     border-color: var(--accent);
     background: var(--accent-bg);
 }
+
+/* Zen Mode (Full Screen Distraction Free) */
+.zen-mode-active {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    width: 100vw;
+    height: 100vh;
+    border-radius: 0;
+    z-index: 9999;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    background: var(--bg);
+    border: none;
+    padding: 40px;
+    animation: fadeIn 0.3s ease;
+}
+
+.zen-mode-active .pomo-header {
+    position: absolute;
+    top: 30px;
+    right: 40px;
+    width: auto;
+    margin: 0;
+}
+
+.zen-mode-active .pomo-title {
+    display: none;
+    /* Hide 'Pomodoro' text in Zen Mode */
+}
+
+.zen-mode-active .pomo-mode-tabs {
+    position: absolute;
+    top: 40px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 400px;
+    max-width: 90vw;
+}
+
+.zen-mode-active .pomo-ring-wrap {
+    width: 350px;
+    height: 350px;
+    margin-bottom: 40px;
+}
+
+.zen-mode-active .pomo-time {
+    font-size: 5rem;
+}
+
+.zen-mode-active .pomo-label-input {
+    width: 400px;
+    max-width: 90vw;
+    font-size: 1.2rem;
+    padding: 16px 20px;
+    text-align: center;
+    margin-bottom: 30px;
+}
+
+.zen-mode-active .pomo-controls {
+    gap: 24px;
+}
+
+.zen-mode-active .pomo-play-btn {
+    width: 80px;
+    height: 80px;
+}
+
+.zen-mode-active .pomo-play-btn svg {
+    width: 34px;
+    height: 34px;
+}
+
+.zen-mode-active .pomo-icon-btn {
+    width: 50px;
+    height: 50px;
+}
+
+.zen-mode-active .pomo-icon-btn svg {
+    width: 20px;
+    height: 20px;
+}
+
+.zen-mode-active .pomo-audio-section {
+    position: absolute;
+    bottom: 40px;
+    right: 40px;
+    width: 300px;
+}

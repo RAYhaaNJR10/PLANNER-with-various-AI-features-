@@ -11,6 +11,7 @@ import {
     where,
     serverTimestamp
 } from 'firebase/firestore';
+import { getTotalMinutesThisWeek } from './pomodoroService';
 
 // Helper to generate a 6-character short code
 const generateJoinCode = () => {
@@ -107,14 +108,23 @@ export const getGroupLeaderboard = async (members) => {
                 level = data.level || 1;
             }
 
+            // Phase 4: Fetch group-specific metrics (weekly focus minutes)
+            let focusMinutes = 0;
+            try {
+                focusMinutes = await getTotalMinutesThisWeek(member.uid);
+            } catch (pomErr) {
+                console.error("Failed to fetch focus minutes for", member.uid, pomErr);
+            }
+
             leaderboard.push({
                 ...member,
                 xp,
-                level
+                level,
+                focusMinutes
             });
         } catch (e) {
             console.error("Failed to fetch XP for", member.uid);
-            leaderboard.push({ ...member, xp: 0, level: 1 });
+            leaderboard.push({ ...member, xp: 0, level: 1, focusMinutes: 0 });
         }
     }
 

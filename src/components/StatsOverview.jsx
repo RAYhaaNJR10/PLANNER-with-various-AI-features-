@@ -4,6 +4,7 @@ import { getSubjectStats } from '../services/subjectService';
 import { getTotalMinutesThisWeek, getPomodoroHistoryForLast30Days } from '../services/pomodoroService';
 import { FiCamera } from 'react-icons/fi';
 import html2canvas from 'html2canvas';
+import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid } from 'recharts';
 import './StatsOverview.css';
 
 const StatsOverview = () => {
@@ -201,11 +202,70 @@ const StatsOverview = () => {
                         ))}
                     </div>
 
+                    {stats.length > 0 && (
+                        <>
+                            <h2 className="stats-section-title" style={{ marginTop: '32px' }}>Visual Analytics</h2>
+                            <div className="stats-charts-grid" style={{
+                                display: 'grid',
+                                gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
+                                gap: '24px',
+                                marginTop: '16px'
+                            }}>
+                                <div className="stats-chart-card" style={{ background: 'var(--card)', padding: '24px', borderRadius: '16px', border: '1px solid var(--border)' }}>
+                                    <h3 style={{ marginBottom: '16px', color: 'var(--text)', textAlign: 'center' }}>Tasks by Subject</h3>
+                                    <div style={{ height: '250px' }}>
+                                        <ResponsiveContainer width="100%" height="100%">
+                                            <PieChart>
+                                                <Pie
+                                                    data={stats}
+                                                    cx="50%"
+                                                    cy="50%"
+                                                    innerRadius={60}
+                                                    outerRadius={80}
+                                                    paddingAngle={5}
+                                                    dataKey="total"
+                                                    nameKey="name"
+                                                >
+                                                    {stats.map((entry, index) => (
+                                                        <Cell key={`cell-${index}`} fill={entry.color || 'var(--accent)'} />
+                                                    ))}
+                                                </Pie>
+                                                <Tooltip
+                                                    contentStyle={{ backgroundColor: 'var(--bg)', borderColor: 'var(--border)', borderRadius: '8px', color: 'var(--text)' }}
+                                                    itemStyle={{ color: 'var(--text)' }}
+                                                />
+                                            </PieChart>
+                                        </ResponsiveContainer>
+                                    </div>
+                                </div>
+
+                                <div className="stats-chart-card" style={{ background: 'var(--card)', padding: '24px', borderRadius: '16px', border: '1px solid var(--border)' }}>
+                                    <h3 style={{ marginBottom: '16px', color: 'var(--text)', textAlign: 'center' }}>Completion Rate</h3>
+                                    <div style={{ height: '250px' }}>
+                                        <ResponsiveContainer width="100%" height="100%">
+                                            <BarChart data={stats.filter(s => s.total > 0)}>
+                                                <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" vertical={false} />
+                                                <XAxis dataKey="name" stroke="var(--text-secondary)" fontSize={12} tickLine={false} axisLine={false} />
+                                                <YAxis stroke="var(--text-secondary)" fontSize={12} tickLine={false} axisLine={false} />
+                                                <Tooltip
+                                                    contentStyle={{ backgroundColor: 'var(--bg)', borderColor: 'var(--border)', borderRadius: '8px', color: 'var(--text)' }}
+                                                    cursor={{ fill: 'var(--hover)' }}
+                                                />
+                                                <Bar dataKey="completed" fill="var(--accent)" radius={[4, 4, 0, 0]} name="Completed" />
+                                                <Bar dataKey="total" fill="var(--border)" radius={[4, 4, 0, 0]} name="Total Assigned" />
+                                            </BarChart>
+                                        </ResponsiveContainer>
+                                    </div>
+                                </div>
+                            </div>
+                        </>
+                    )}
+
                     {stats.length === 0 && (
                         <div className="empty-state">
                             <span className="empty-emoji">📊</span>
                             <h3>No subjects to show</h3>
-                            <p>Add subjects and topics to see your progress here!</p>
+                            <p>Add subjects and tasks to see your visual progress here!</p>
                         </div>
                     )}
                 </div>

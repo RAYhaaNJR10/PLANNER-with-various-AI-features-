@@ -272,3 +272,93 @@
     border-radius: 4px;
     font-size: 0.8em;
 }
+
+/* Kanban Board View Styles */
+.view-toggle {
+    display: flex;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.view-btn {
+    background: transparent;
+    border: none;
+    padding: 8px 12px;
+    color: var(--text-secondary);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+}
+
+.view-btn:hover {
+    background: var(--hover);
+}
+
+.view-btn.active {
+    background: var(--accent);
+    color: white;
+}
+
+.kanban-board {
+    display: flex;
+    gap: 24px;
+    align-items: flex-start;
+    margin-top: 20px;
+    width: 100%;
+}
+
+.kanban-column {
+    flex: 1;
+    background: var(--bg);
+    border: 1px dashed var(--border);
+    border-radius: 16px;
+    padding: 16px;
+    min-height: 400px;
+    display: flex;
+    flex-direction: column;
+}
+
+.kanban-column:hover {
+    border-color: var(--text-secondary);
+}
+
+.kanban-title {
+    font-size: 1.1rem;
+    color: var(--text);
+    margin: 0 0 16px 0;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.kanban-badge {
+    background: var(--hover);
+    color: var(--text-secondary);
+    font-size: 0.8rem;
+    padding: 2px 8px;
+    border-radius: 100px;
+}
+
+.kanban-cards {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    flex: 1;
+}
+
+.kanban-card {
+    cursor: grab;
+}
+
+.kanban-card:active {
+    cursor: grabbing;
+}
+
+.kanban-card.is-dragging {
+    opacity: 0.5;
+    transform: scale(0.95);
+}
