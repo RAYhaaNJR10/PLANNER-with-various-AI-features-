@@ -1,22 +1,30 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { getSubjectStats } from '../services/subjectService';
-import { getTotalMinutesThisWeek } from '../services/pomodoroService';
+import { getTotalMinutesThisWeek, getPomodoroHistoryForLast30Days } from '../services/pomodoroService';
+import { FiCamera } from 'react-icons/fi';
+import html2canvas from 'html2canvas';
 import './StatsOverview.css';
 
 const StatsOverview = () => {
     const { user } = useAuth();
     const [stats, setStats] = useState([]);
     const [focusMinutes, setFocusMinutes] = useState(0);
+    const [heatmapData, setHeatmapData] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [exporting, setExporting] = useState(false);
+    const statsRef = useRef(null);
 
     useEffect(() => {
         if (!user) return;
         const fetchStats = async () => {
             const data = await getSubjectStats(user.uid);
             const minutes = await getTotalMinutesThisWeek(user.uid);
+            const heatmap = await getPomodoroHistoryForLast30Days(user.uid);
+
             setStats(data);
             setFocusMinutes(minutes);
+            setHeatmapData(heatmap);
             setLoading(false);
         };
         fetchStats();
@@ -26,13 +34,47 @@ const StatsOverview = () => {
     const overallTotal = stats.reduce((sum, s) => sum + s.total, 0);
     const overallPercentage = overallTotal > 0 ? Math.round((overallCompleted / overallTotal) * 100) : 0;
 
+    const handleExport = async () => {
+        if (!statsRef.current) return;
+        setExporting(true);
+        try {
+            // Wait a tick for UI to settle if resolving anything
+            await new Promise(r => setTimeout(r, 100));
+            const canvas = await html2canvas(statsRef.current, {
+                backgroundColor: getComputedStyle(document.documentElement).getPropertyValue('--bg').trim() || '#121212',
+                scale: 2, // High resolution
+                logging: false,
+                useCORS: true
+            });
+            const url = canvas.toDataURL('image/png');
+            const link = document.createElement('a');
+            link.download = `LevelUp-Stats-${new Date().toISOString().split('T')[0]}.png`;
+            link.href = url;
+            link.click();
+        } catch (err) {
+            console.error('Failed to export image:', err);
+            alert('Failed to export progress card.');
+        } finally {
+            setExporting(false);
+        }
+    };
+
     return (
         <div className="stats-page">
-            <div className="page-header">
+            <div className="page-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <div>
                     <h1 className="page-title">📊 Stats</h1>
                     <p className="page-subtitle">Track your overall progress</p>
                 </div>
+                {!loading && (
+                    <button
+                        className="btn btn-accent"
+                        onClick={handleExport}
+                        disabled={exporting}
+                    >
+                        {exporting ? '📸 Capturing...' : <><FiCamera /> Export Progress</>}
+                    </button>
+                )}
             </div>
 
             {loading ? (
@@ -41,7 +83,7 @@ const StatsOverview = () => {
                     <p>Loading stats...</p>
                 </div>
             ) : (
-                <>
+                <div ref={statsRef} style={{ padding: '20px', background: 'var(--bg)', borderRadius: '16px', margin: '-20px' }}>
                     <div className="stats-overview-card">
                         <div className="stats-big-ring">
                             <svg width="120" height="120" viewBox="0 0 120 120">
@@ -93,7 +135,50 @@ const StatsOverview = () => {
                         </div>
                     </div>
 
-                    <h2 className="stats-section-title">By Subject</h2>
+                    {/* Heatmap Section */}
+                    {heatmapData.length > 0 && (
+                        <div className="stats-heatmap-section">
+                            <h2 className="stats-section-title">Study Heatmap (30 Days)</h2>
+                            <div className="heatmap-grid" style={{
+                                display: 'grid',
+                                gridTemplateColumns: 'repeat(15, 1fr)',
+                                gap: '6px',
+                                marginTop: '16px',
+                                padding: '24px',
+                                background: 'var(--card)',
+                                borderRadius: '16px',
+                                border: '1px solid var(--border)'
+                            }}>
+                                {heatmapData.map((day) => {
+                                    // Determine color based on minutes
+                                    let color = 'var(--bg)';
+                                    if (day.totalMinutes > 0) color = 'var(--accent-bg)';
+                                    if (day.totalMinutes > 30) color = 'var(--accent)';
+                                    if (day.totalMinutes > 90) color = 'var(--primary)';
+                                    if (day.totalMinutes > 180) color = '#00B894';
+
+                                    return (
+                                        <div
+                                            key={day.date}
+                                            title={`${day.date}: ${day.totalMinutes} mins`}
+                                            style={{
+                                                aspectRatio: '1',
+                                                background: color,
+                                                borderRadius: '4px',
+                                                opacity: 1,
+                                                border: day.totalMinutes === 0 ? '1px solid var(--border)' : 'none',
+                                                transition: 'transform 0.2s ease'
+                                            }}
+                                            onMouseEnter={(e) => e.target.style.transform = 'scale(1.2)'}
+                                            onMouseLeave={(e) => e.target.style.transform = 'scale(1)'}
+                                        />
+                                    );
+                                })}
+                            </div>
+                        </div>
+                    )}
+
+                    <h2 className="stats-section-title" style={{ marginTop: '32px' }}>By Subject</h2>
 
                     <div className="stats-subjects-grid">
                         {stats.map((s) => (
@@ -123,7 +208,7 @@ const StatsOverview = () => {
                             <p>Add subjects and topics to see your progress here!</p>
                         </div>
                     )}
-                </>
+                </div>
             )}
         </div>
     );

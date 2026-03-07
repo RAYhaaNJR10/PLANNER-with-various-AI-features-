@@ -8,6 +8,7 @@ import {
     where,
     onSnapshot,
     serverTimestamp,
+    getDocs,
 } from 'firebase/firestore';
 import { db } from '../firebase';
 
@@ -47,4 +48,21 @@ export const subscribeToTasksByDate = (userId, dateStr, callback) => {
     }, (error) => {
         console.error('Error listening to tasks:', error);
     });
+};
+
+export const subscribeToAllTasks = (userId, callback) => {
+    const ref = getTasksRef(userId);
+    return onSnapshot(ref, (snapshot) => {
+        const tasks = snapshot.docs.map((d) => ({ id: d.id, ...d.data() }));
+        callback(tasks);
+    }, (error) => {
+        console.error('Error listening to all tasks:', error);
+    });
+};
+
+export const getPendingTasks = async (userId) => {
+    const ref = getTasksRef(userId);
+    const q = query(ref, where('completed', '==', false));
+    const snap = await getDocs(q);
+    return snap.docs.map(d => ({ id: d.id, ...d.data() }));
 };

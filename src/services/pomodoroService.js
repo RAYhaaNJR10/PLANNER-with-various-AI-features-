@@ -40,3 +40,23 @@ export const getTotalMinutesThisWeek = async (uid) => {
     }
     return total;
 };
+
+export const getPomodoroHistoryForLast30Days = async (uid) => {
+    // Generate the last 30 days
+    const days = [];
+    const today = new Date();
+    for (let i = 29; i >= 0; i--) {
+        const d = new Date(today);
+        d.setDate(today.getDate() - i);
+        days.push(d.toISOString().split('T')[0]);
+    }
+
+    const history = [];
+    for (const date of days) {
+        const sessions = await getSessionsForDate(uid, date);
+        const totalMinutes = sessions.reduce((sum, s) => sum + (s.duration || 0), 0);
+        history.push({ date, totalMinutes });
+    }
+
+    return history;
+};

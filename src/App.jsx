@@ -11,10 +11,34 @@ import HabitsTracker from './components/HabitsTracker';
 import LoginPage from './components/LoginPage';
 import PomodoroTimer from './components/PomodoroTimer';
 import SharedSubjectView from './components/SharedSubjectView';
+import Leaderboard from './components/Leaderboard';
+import PrivacyPolicy from './components/PrivacyPolicy';
+import TermsOfService from './components/TermsOfService';
 import './App.css';
 
 const AppContent = () => {
   const { user, loading } = useAuth();
+
+  // Handle public routes gracefully FIRST - Do not wait for Auth Loading
+  const isPublicRoute = window.location.pathname.startsWith('/share/') ||
+    window.location.pathname.startsWith('/privacy') ||
+    window.location.pathname.startsWith('/terms');
+
+  if (isPublicRoute) {
+    return (
+      <ThemeProvider>
+        <div className="app-layout" style={{ paddingLeft: 0 }}>
+          <main className="main-content" style={{ marginLeft: 0 }}>
+            <Routes>
+              <Route path="/share/:shareId" element={<SharedSubjectView />} />
+              <Route path="/privacy" element={<PrivacyPolicy />} />
+              <Route path="/terms" element={<TermsOfService />} />
+            </Routes>
+          </main>
+        </div>
+      </ThemeProvider>
+    );
+  }
 
   if (loading) {
     return (
@@ -26,21 +50,6 @@ const AppContent = () => {
           <p>Loading...</p>
         </div>
       </div>
-    );
-  }
-
-  // Public share route — no auth needed
-  if (window.location.pathname.startsWith('/share/')) {
-    return (
-      <ThemeProvider>
-        <div className="app-layout" style={{ paddingLeft: 0 }}>
-          <main className="main-content" style={{ marginLeft: 0 }}>
-            <Routes>
-              <Route path="/share/:shareId" element={<SharedSubjectView />} />
-            </Routes>
-          </main>
-        </div>
-      </ThemeProvider>
     );
   }
 
@@ -59,6 +68,7 @@ const AppContent = () => {
           <Route path="/labels" element={<LabelManager />} />
           <Route path="/stats" element={<StatsOverview />} />
           <Route path="/habits" element={<HabitsTracker />} />
+          <Route path="/groups" element={<Leaderboard />} />
           <Route path="/share/:shareId" element={<SharedSubjectView />} />
         </Routes>
       </main>

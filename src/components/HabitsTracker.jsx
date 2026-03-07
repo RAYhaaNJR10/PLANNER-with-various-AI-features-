@@ -20,12 +20,10 @@ const getLast7Days = () => Array.from({ length: 7 }, (_, i) => {
 
 const HabitCard = ({ habit, uid }) => {
     const [completions, setCompletions] = useState({});
-    const [loading, setLoading] = useState(true);
 
     useEffect(() => {
         getWeekCompletions(uid, habit.id).then(c => {
             setCompletions(c);
-            setLoading(false);
         });
     }, [habit.id, uid]);
 

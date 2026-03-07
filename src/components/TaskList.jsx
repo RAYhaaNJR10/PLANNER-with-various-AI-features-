@@ -120,7 +120,8 @@ const TaskList = () => {
 
             <div className="task-list">
                 {tasks.map((task) => {
-                    const label = getLabel(task.labelId);
+                    const taskLabelIds = task.labelIds || (task.labelId ? [task.labelId] : []);
+                    const taskLabels = taskLabelIds.map(id => getLabel(id)).filter(Boolean);
                     const priority = PRIORITY_CONFIG[task.priority] || PRIORITY_CONFIG.medium;
                     const hasSubtasks = task.subTasks && task.subTasks.length > 0;
                     const isExpanded = expandedSubtasks[task.id];
@@ -147,11 +148,11 @@ const TaskList = () => {
                                     <span className="task-priority" style={{ background: priority.color + '20', color: priority.color }}>
                                         {priority.emoji} {priority.label}
                                     </span>
-                                    {label && (
-                                        <span className="task-label" style={{ background: label.color + '20', color: label.color }}>
+                                    {taskLabels.map(label => (
+                                        <span key={label.id} className="task-label" style={{ background: label.color + '20', color: label.color }}>
                                             {label.icon} {label.name}
                                         </span>
-                                    )}
+                                    ))}
                                     {hasSubtasks && (
                                         <button
                                             className="subtask-toggle"

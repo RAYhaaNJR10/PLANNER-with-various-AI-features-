@@ -1,0 +1,205 @@
+.leaderboard-page {
+    width: 100%;
+}
+
+.leaderboard-layout {
+    display: flex;
+    gap: 24px;
+    margin-top: 24px;
+    align-items: flex-start;
+}
+
+.group-sidebar {
+    width: 250px;
+    background: var(--card);
+    border-radius: 16px;
+    padding: 16px;
+    border: 1px solid var(--border);
+    flex-shrink: 0;
+}
+
+.group-sidebar-title {
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+    margin-bottom: 12px;
+    padding-left: 8px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.group-list {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.group-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 12px;
+    background: transparent;
+    border: none;
+    border-radius: 8px;
+    color: var(--text);
+    font-family: inherit;
+    font-size: 0.95rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    text-align: left;
+}
+
+.group-item:hover {
+    background: var(--hover);
+}
+
+.group-item.active {
+    background: var(--accent-bg);
+    color: var(--accent);
+}
+
+.group-icon {
+    font-size: 1.1rem;
+    opacity: 0.7;
+}
+
+.group-item.active .group-icon {
+    opacity: 1;
+}
+
+.leaderboard-content {
+    flex: 1;
+    background: var(--card);
+    border-radius: 16px;
+    padding: 24px;
+    border: 1px solid var(--border);
+}
+
+.leaderboard-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    padding-bottom: 20px;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 20px;
+}
+
+.leaderboard-group-name {
+    font-size: 1.5rem;
+    font-weight: 800;
+    color: var(--text);
+    margin-bottom: 4px;
+}
+
+.leaderboard-group-meta {
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+}
+
+.rankings-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.ranking-card {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 16px;
+    background: var(--bg);
+    border-radius: 12px;
+    border: 1px solid var(--border);
+    transition: transform 0.2s ease;
+}
+
+.ranking-card:hover {
+    transform: translateX(4px);
+    border-color: var(--accent);
+}
+
+.ranking-card--me {
+    background: var(--accent-bg);
+    border-color: var(--accent);
+}
+
+.rank-badge {
+    width: 36px;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 800;
+    font-size: 1.2rem;
+    border-radius: 50%;
+}
+
+.rank-normal {
+    color: var(--text-secondary);
+    font-size: 1rem;
+}
+
+.rank-gold {
+    font-size: 1.5rem;
+}
+
+.rank-silver {
+    font-size: 1.5rem;
+}
+
+.rank-bronze {
+    font-size: 1.5rem;
+}
+
+.rank-avatar {
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    object-fit: cover;
+    box-shadow: var(--shadow-sm);
+}
+
+.rank-info {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+.rank-name {
+    font-weight: 700;
+    color: var(--text);
+    font-size: 1.05rem;
+}
+
+.rank-level {
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+}
+
+.rank-score {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--accent);
+}
+
+.rank-icon {
+    font-size: 1.2rem;
+}
+
+.rank-xp {
+    font-weight: 800;
+    font-size: 1.2rem;
+}
+
+@media (max-width: 768px) {
+    .leaderboard-layout {
+        flex-direction: column;
+    }
+
+    .group-sidebar {
+        width: 100%;
+        margin-bottom: 16px;
+    }
+}

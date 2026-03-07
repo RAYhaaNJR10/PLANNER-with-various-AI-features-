@@ -5,20 +5,20 @@ import { signOut } from '../services/auth';
 import XPBar from './XPBar';
 import {
     FiSun, FiMoon, FiCalendar, FiCheckSquare,
-    FiTag, FiBook, FiBarChart2, FiLogOut, FiRepeat
+    FiTag, FiBook, FiBarChart2, FiLogOut, FiRepeat, FiUsers
 } from 'react-icons/fi';
 import './Sidebar.css';
 
 const Sidebar = () => {
-    const { isDark, toggleTheme } = useTheme();
+    const { isDark, toggleTheme, accentColor, setAccentColor } = useTheme();
     const { user } = useAuth();
 
     const links = [
         { to: '/', icon: <FiCheckSquare />, label: "Today's Plan" },
         { to: '/calendar', icon: <FiCalendar />, label: 'Calendar' },
         { to: '/subjects', icon: <FiBook />, label: 'Subjects' },
+        { to: '/groups', icon: <FiUsers />, label: 'Study Groups' },
         { to: '/habits', icon: <FiRepeat />, label: 'Habits' },
-        { to: '/labels', icon: <FiTag />, label: 'Labels' },
         { to: '/stats', icon: <FiBarChart2 />, label: 'Stats' },
     ];
 
@@ -56,6 +56,22 @@ const Sidebar = () => {
                     {isDark ? <FiSun size={18} /> : <FiMoon size={18} />}
                     <span>{isDark ? 'Light' : 'Dark'}</span>
                 </button>
+
+                <div className="accent-picker" style={{ display: 'flex', gap: '8px', padding: '4px 8px', justifyContent: 'center' }}>
+                    {['#00B894', '#0984E3', '#6C5CE7', '#FD79A8', '#E17055'].map(color => (
+                        <button
+                            key={color}
+                            onClick={() => setAccentColor(color)}
+                            style={{
+                                width: '20px', height: '20px', borderRadius: '50%', border: 'none', cursor: 'pointer',
+                                background: color, transform: accentColor === color ? 'scale(1.2)' : 'none',
+                                transition: 'transform 0.2s',
+                                boxShadow: accentColor === color ? `0 0 0 2px ${isDark ? '#333' : '#fff'}, 0 0 0 4px ${color}` : 'none'
+                            }}
+                            title="Change Accent Color"
+                        />
+                    ))}
+                </div>
 
                 {user && (
                     <div className="user-profile">

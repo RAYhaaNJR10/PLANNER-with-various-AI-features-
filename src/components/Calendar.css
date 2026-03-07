@@ -75,19 +75,28 @@
 }
 
 .cal-cell {
-    aspect-ratio: 1;
+    aspect-ratio: auto;
+    /* override earlier rule */
+    height: 100px;
     display: flex;
-    align-items: center;
-    justify-content: center;
+    flex-direction: column;
+    align-items: stretch;
+    justify-content: flex-start;
+    padding: 6px;
     border-radius: 12px;
     cursor: pointer;
     transition: all 0.2s ease;
     position: relative;
+    overflow: hidden;
+    /* Prevent chips from spilling out */
+    background: transparent;
 }
 
 .cal-cell:hover:not(.cal-cell--disabled) {
     background: var(--hover);
-    transform: scale(1.1);
+    transform: scale(1.05);
+    /* Less dramatic scaling to prevent breaking grid */
+    z-index: 10;
 }
 
 .cal-cell--disabled {
@@ -105,14 +114,86 @@
 }
 
 .cal-cell-number {
+    align-self: flex-end;
     font-size: 0.95rem;
     font-weight: 500;
     color: var(--text);
+    margin-bottom: 4px;
+    flex-shrink: 0;
 }
 
-@media (max-width: 768px) {
-    .cal-container {
-        padding: 16px;
-        border-radius: 16px;
-    }
+.cal-cell-tasks {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    width: 100%;
+    overflow: hidden;
+    /* Hide anything that pushes past height */
+}
+
+.cal-chip {
+    font-size: 0.65rem;
+    padding: 2px 6px;
+    border-radius: 4px;
+    border-left: 3px solid;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    font-weight: 500;
+}
+
+.cal-chip--done {
+    text-decoration: line-through;
+    opacity: 0.6;
+}
+
+.cal-chip-more {
+    font-size: 0.65rem;
+    color: var(--text-secondary);
+    font-weight: 600;
+    text-align: center;
+    padding-top: 2px;
+}
+
+/* Calendar Popup Styles */
+.cal-popup-content {
+    display: flex;
+    flex-direction: column;
+}
+
+.cal-popup-tasks {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    max-height: 50vh;
+    overflow-y: auto;
+    padding-right: 8px;
+}
+
+.cal-popup-task {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px;
+    background: var(--bg);
+    border-radius: 12px;
+    border: 1px solid var(--border);
+}
+
+.cal-popup-task-color {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+
+.cal-popup-task-title {
+    font-size: 0.95rem;
+    color: var(--text);
+    font-weight: 500;
+}
+
+.cal-popup-task-title.completed {
+    text-decoration: line-through;
+    color: var(--text-secondary);
 }

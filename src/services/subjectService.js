@@ -7,6 +7,9 @@ import {
     getDocs,
     onSnapshot,
     serverTimestamp,
+    query,
+    orderBy,
+    writeBatch
 } from 'firebase/firestore';
 import { db } from '../firebase';
 
@@ -50,10 +53,20 @@ export const addTopic = async (userId, subjectId, topic) => {
     const ref = getTopicsRef(userId, subjectId);
     return addDoc(ref, {
         ...topic,
+        order: topic.order || 0,
         completed: false,
         completedAt: null,
         createdAt: serverTimestamp(),
     });
+};
+
+export const updateTopicOrder = async (userId, subjectId, orderedTopics) => {
+    const batch = writeBatch(db);
+    orderedTopics.forEach((topic, index) => {
+        const ref = doc(db, 'users', userId, 'subjects', subjectId, 'topics', topic.id);
+        batch.update(ref, { order: index });
+    });
+    return batch.commit();
 };
 
 export const updateTopic = async (userId, subjectId, topicId, updates) => {
@@ -78,6 +91,18 @@ export const subscribeToTopics = (userId, subjectId, callback) => {
     const ref = getTopicsRef(userId, subjectId);
     return onSnapshot(ref, (snapshot) => {
         const topics = snapshot.docs.map((d) => ({ id: d.id, ...d.data() }));
+
+        // Sort client-side so we don't drop legacy topics that lack the 'order' field
+        topics.sort((a, b) => {
+            const orderA = a.order !== undefined ? a.order : 0;
+            const orderB = b.order !== undefined ? b.order : 0;
+            if (orderA !== orderB) return orderA - orderB;
+
+            const timeA = a.createdAt?.seconds || 0;
+            const timeB = b.createdAt?.seconds || 0;
+            return timeA - timeB;
+        });
+
         callback(topics);
     });
 };

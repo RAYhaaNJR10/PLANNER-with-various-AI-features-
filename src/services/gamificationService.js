@@ -1,6 +1,6 @@
 import { db } from '../firebase';
 import {
-    doc, getDoc, setDoc, increment, updateDoc, serverTimestamp
+    doc, getDoc, setDoc, updateDoc, increment
 } from 'firebase/firestore';
 
 const LEVEL_THRESHOLDS = [0, 100, 250, 500, 1000, 2000, 4000, 8000, 16000, 32000];

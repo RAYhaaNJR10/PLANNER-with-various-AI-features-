@@ -73,6 +73,7 @@
 
 .pomo-mode-tabs {
     display: flex;
+    flex-wrap: wrap;
     gap: 4px;
     margin-bottom: 16px;
     background: var(--bg);
@@ -194,4 +195,133 @@
     .pomo-widget {
         width: 260px;
     }
+}
+
+/* Audio Playlist Styles */
+.pomo-audio-section {
+    margin-top: 16px;
+    background: var(--bg);
+    border-radius: 12px;
+    border: 1px solid var(--border);
+    overflow: hidden;
+}
+
+.pomo-audio-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 12px;
+    cursor: pointer;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+    transition: background 0.2s ease;
+}
+
+.pomo-audio-header:hover {
+    background: var(--hover);
+    color: var(--text);
+}
+
+.pomo-audio-now-playing {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.spinning-icon {
+    animation: spinSlow 3s linear infinite;
+    color: var(--accent);
+}
+
+@keyframes spinSlow {
+    100% {
+        transform: rotate(360deg);
+    }
+}
+
+.pomo-playlist {
+    border-top: 1px solid var(--border);
+    padding: 8px;
+}
+
+.pomo-playlist-controls {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 8px;
+    justify-content: flex-end;
+}
+
+.pomo-playlist-btn {
+    background: transparent;
+    border: none;
+    color: var(--text-secondary);
+    cursor: pointer;
+    padding: 4px;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    transition: all 0.2s;
+}
+
+.pomo-playlist-btn:hover {
+    color: var(--text);
+    background: var(--hover);
+}
+
+.pomo-playlist-btn.active {
+    color: var(--accent);
+}
+
+.pomo-playlist-tracks {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.pomo-track-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 8px;
+    border-radius: 6px;
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+    cursor: grab;
+    transition: background 0.2s;
+}
+
+.pomo-track-item:active {
+    cursor: grabbing;
+}
+
+.pomo-track-item:hover {
+    background: var(--hover);
+}
+
+.pomo-track-item.playing {
+    color: var(--accent);
+    font-weight: 600;
+    background: var(--accent-bg);
+}
+
+.pomo-track-title {
+    flex: 1;
+    cursor: pointer;
+}
+
+.pomo-track-drag {
+    color: var(--border);
+    display: flex;
+    align-items: center;
+}
+
+.pomo-track-item:hover .pomo-track-drag {
+    color: var(--text-secondary);
+}
+
+.active-audio {
+    color: var(--accent);
+    border-color: var(--accent);
+    background: var(--accent-bg);
 }

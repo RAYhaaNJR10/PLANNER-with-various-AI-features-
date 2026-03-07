@@ -1,5 +1,9 @@
 import { db } from '../firebase';
-import { doc, setDoc, getDoc, collection } from 'firebase/firestore';
+import {
+    doc,
+    getDoc,
+    setDoc
+} from 'firebase/firestore';
 
 const generateId = () => Math.random().toString(36).slice(2, 10);
 

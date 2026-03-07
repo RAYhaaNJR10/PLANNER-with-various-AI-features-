@@ -124,3 +124,75 @@ Return ONLY a JSON array of strings, no markdown, no explanation:
     }
     throw new Error('AI breakdown failed. Try again later.');
 };
+
+export const generateQuizForTopic = async (topicName, subjectName) => {
+    const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
+    if (!apiKey) throw new Error('Gemini API key not found.');
+
+    const prompt = `Generate a 3-question multiple-choice quiz about the educational topic "${topicName}" from the subject "${subjectName}".
+
+Return ONLY a valid JSON array of objects, with no markdown formatting or explanations. Format:
+[
+  {
+    "question": "The question text?",
+    "options": ["A", "B", "C", "D"],
+    "correctIndex": 0,
+    "explanation": "Brief explanation of why this is correct."
+  }
+]
+- Ensure correctIndex is a number between 0 and 3 corresponding to the correct option.
+- Make the questions challenging but fair.`;
+
+    const errors = [];
+    for (const modelName of GEMINI_MODELS) {
+        try {
+            let text = await callGeminiAPI(apiKey, modelName, prompt);
+            text = text.trim().replace(/```json\s*/gi, '').replace(/```\s*/g, '').trim();
+            const parsed = JSON.parse(text);
+            if (!Array.isArray(parsed)) throw new Error('Not an array');
+            return parsed;
+        } catch (err) {
+            errors.push(`${modelName}: ${err.message}`);
+            if (err.message?.includes('429')) await new Promise(r => setTimeout(r, 1500));
+        }
+    }
+    throw new Error('AI quiz generation failed. Try again later.');
+};
+
+export const generateFullCourse = async (coursePrompt) => {
+    const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
+    if (!apiKey) throw new Error('Gemini API key not found.');
+
+    const prompt = `You are an expert curriculum designer. The user wants to learn: "${coursePrompt}".
+Create a comprehensive, step-by-step course curriculum for this topic.
+
+Return ONLY a valid JSON object in this exact format, with no markdown formatting or explanations:
+{
+  "subjectName": "A clear, descriptive title for the course",
+  "topics": [
+    "Topic 1 (Basics)",
+    "Topic 2",
+    "Topic 3",
+    "Topic 4 (Advanced)"
+  ]
+}
+- Provide around 10 to 15 topics, ordered logically from beginner to advanced.
+- Keep topic names concise and actionable.`;
+
+    const errors = [];
+    for (const modelName of GEMINI_MODELS) {
+        try {
+            let text = await callGeminiAPI(apiKey, modelName, prompt);
+            text = text.trim().replace(/```json\s*/gi, '').replace(/```\s*/g, '').trim();
+            const parsed = JSON.parse(text);
+            if (!parsed.subjectName || !Array.isArray(parsed.topics)) {
+                throw new Error('Invalid JSON structure returned');
+            }
+            return parsed;
+        } catch (err) {
+            errors.push(`${modelName}: ${err.message}`);
+            if (err.message?.includes('429')) await new Promise(r => setTimeout(r, 1500));
+        }
+    }
+    throw new Error('AI course generation failed. Try again later.');
+};

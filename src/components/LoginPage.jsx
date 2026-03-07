@@ -1,17 +1,20 @@
 import { signInWithGoogle } from '../services/auth';
 import { useState } from 'react';
 import { FcGoogle } from 'react-icons/fc';
+import { useAuth } from '../contexts/AuthContext';
 import './LoginPage.css';
 
 const LoginPage = () => {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
+    const { saveCalendarToken } = useAuth();
 
     const handleGoogleSignIn = async () => {
         setLoading(true);
         setError('');
         try {
-            await signInWithGoogle();
+            const { token } = await signInWithGoogle();
+            if (token) saveCalendarToken(token);
         } catch (err) {
             setError('Sign-in failed. Please try again.');
             console.error(err);
@@ -25,7 +28,7 @@ const LoginPage = () => {
             <div className="login-card">
                 <div className="login-header">
                     <span className="login-logo">📋</span>
-                    <h1 className="login-title">Planner</h1>
+                    <h1 className="login-title">Daily Planner</h1>
                     <p className="login-subtitle">Your colorful daily task manager</p>
                 </div>
 
@@ -47,9 +50,13 @@ const LoginPage = () => {
 
                 {error && <p className="login-error">{error}</p>}
 
-                <p className="login-footer">
-                    Your data is stored securely in the cloud ☁️
-                </p>
+                <div className="login-footer" style={{ marginTop: '1.5rem', textAlign: 'center', fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
+                    <p style={{ marginBottom: '8px' }}>Your data is stored securely in the cloud ☁️</p>
+                    <p>
+                        By signing in, you agree to our <br />
+                        <a href="https://daily-planner-1f44d.web.app/terms" style={{ color: 'var(--accent)', textDecoration: 'none', fontWeight: 'bold' }}>Terms of Service</a> and <a href="https://daily-planner-1f44d.web.app/privacy" style={{ color: 'var(--accent)', textDecoration: 'none', fontWeight: 'bold' }}>Privacy Policy</a>
+                    </p>
+                </div>
             </div>
 
             <div className="login-bg-shapes">
