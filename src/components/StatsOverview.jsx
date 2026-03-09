@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { getSubjectStats } from '../services/subjectService';
 import { getTotalMinutesThisWeek, getPomodoroHistoryForLast30Days } from '../services/pomodoroService';
+import { getChallengeData, claimChallengeReward } from '../services/gamificationService';
 import { FiCamera } from 'react-icons/fi';
 import html2canvas from 'html2canvas';
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid } from 'recharts';
@@ -12,6 +13,7 @@ const StatsOverview = () => {
     const [stats, setStats] = useState([]);
     const [focusMinutes, setFocusMinutes] = useState(0);
     const [heatmapData, setHeatmapData] = useState([]);
+    const [challenges, setChallenges] = useState(null);
     const [loading, setLoading] = useState(true);
     const [exporting, setExporting] = useState(false);
     const statsRef = useRef(null);
@@ -22,10 +24,12 @@ const StatsOverview = () => {
             const data = await getSubjectStats(user.uid);
             const minutes = await getTotalMinutesThisWeek(user.uid);
             const heatmap = await getPomodoroHistoryForLast30Days(user.uid);
+            const cData = await getChallengeData(user.uid);
 
             setStats(data);
             setFocusMinutes(minutes);
             setHeatmapData(heatmap);
+            setChallenges(cData);
             setLoading(false);
         };
         fetchStats();
@@ -58,6 +62,51 @@ const StatsOverview = () => {
         } finally {
             setExporting(false);
         }
+    };
+
+    const handleClaim = async (id, xp) => {
+        if (!user) return;
+        try {
+            await claimChallengeReward(user.uid, id, xp);
+            setChallenges(prev => ({ ...prev, [`${id}Claimed`]: true }));
+            alert(`Reward claimed! +${xp} XP 👑`);
+        } catch (e) {
+            console.error(e);
+            alert('Failed to claim reward.');
+        }
+    };
+
+    const renderChallengeCard = (title, desc, current, target, id, rewardXP) => {
+        if (!challenges) return null;
+        const isComplete = (current || 0) >= target;
+        const isClaimed = challenges[`${id}Claimed`];
+        const progressPct = Math.min(100, Math.round(((current || 0) / target) * 100));
+
+        return (
+            <div key={id} className={`stats-challenge-card ${isClaimed ? 'claimed' : (isComplete ? 'complete' : '')}`}>
+                <div className="stats-challenge-info">
+                    <h3 style={{ fontSize: '1.05rem', margin: '0 0 4px', color: 'var(--text)' }}>{title}</h3>
+                    <p style={{ fontSize: '0.85rem', margin: '0 0 12px', color: 'var(--text-secondary)' }}>{desc}</p>
+                    <div className="stats-bar-container" style={{ margin: '8px 0' }}>
+                        <div className="stats-bar" style={{ height: '6px' }}>
+                            <div className="stats-bar-fill" style={{ width: `${progressPct}%`, background: isComplete ? '#10b981' : 'var(--accent)' }} />
+                        </div>
+                    </div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem', fontWeight: 600 }}>
+                        <span style={{ color: 'var(--text-secondary)' }}>{current || 0} / {target}</span>
+                        <span style={{ color: 'var(--accent)' }}>+{rewardXP} XP</span>
+                    </div>
+                </div>
+                <button 
+                    className={`btn ${isClaimed ? 'btn-ghost' : (isComplete ? 'btn-primary' : '')}`}
+                    disabled={!isComplete || isClaimed}
+                    onClick={() => handleClaim(id, rewardXP)}
+                    style={{ width: '100%', marginTop: '12px', padding: '6px', fontSize: '0.9rem', opacity: (!isComplete && !isClaimed) ? 0.5 : 1 }}
+                >
+                    {isClaimed ? 'Claimed ✓' : (isComplete ? 'Claim Reward!' : 'In Progress')}
+                </button>
+            </div>
+        );
     };
 
     return (
@@ -135,6 +184,23 @@ const StatsOverview = () => {
                             </div>
                         </div>
                     </div>
+
+                    {/* Challenges Section */}
+                    {challenges && (
+                        <div className="stats-challenges-section" style={{ marginTop: '32px' }}>
+                            <h2 className="stats-section-title">🏆 Active Challenges</h2>
+                            <div style={{
+                                display: 'grid',
+                                gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))',
+                                gap: '16px',
+                                marginTop: '16px'
+                            }}>
+                                {renderChallengeCard('Weekly XP Goal', 'Earn 500 XP this week', challenges.weeklyXP, 500, 'weeklyXP', 200)}
+                                {renderChallengeCard('Weekly Focus', 'Complete 10 Pomodoros', challenges.weeklyPomodoros, 10, 'weeklyPomodoros', 150)}
+                                {renderChallengeCard('Monthly Hustle', 'Complete 50 Tasks', challenges.monthlyTasks, 50, 'monthlyTasks', 1000)}
+                            </div>
+                        </div>
+                    )}
 
                     {/* Heatmap Section */}
                     {heatmapData.length > 0 && (

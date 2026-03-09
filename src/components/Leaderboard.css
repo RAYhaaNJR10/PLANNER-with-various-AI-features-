@@ -261,3 +261,26 @@
         margin-bottom: 16px;
     }
 }
+
+/* Nudge Button */
+.nudge-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: transparent;
+    color: var(--text-secondary);
+    font-size: 0.75rem;
+    font-weight: 600;
+    padding: 3px 8px;
+    border-radius: 100px;
+    border: 1px dashed var(--border);
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.nudge-btn:hover {
+    color: var(--accent);
+    border-color: var(--accent);
+    background: var(--accent-bg);
+    transform: scale(1.05);
+}

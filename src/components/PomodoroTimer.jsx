@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { logPomodoroSession } from '../services/pomodoroService';
-import { awardXP, updateStreak } from '../services/gamificationService';
+import { awardXP, updateStreak, updateChallengeProgress } from '../services/gamificationService';
 import { updatePresence } from '../services/presenceService';
 import { FiPlay, FiPause, FiRotateCcw, FiMinus, FiMaximize2, FiMinimize2, FiMusic, FiSkipForward, FiRepeat, FiVolume2, FiVolumeX, FiMove, FiChevronDown, FiChevronUp, FiSquare } from 'react-icons/fi';
 import './PomodoroTimer.css';
@@ -21,9 +21,13 @@ const PomodoroTimer = () => {
     const [running, setRunning] = useState(false);
     const [minimized, setMinimized] = useState(true);
     const [isZenMode, setIsZenMode] = useState(false);
+    const [isHardcore, setIsHardcore] = useState(false);
+    const [hardcoreWarning, setHardcoreWarning] = useState(false);
+    const [hardcoreCountdown, setHardcoreCountdown] = useState(10);
     const [label, setLabel] = useState('');
     const intervalRef = useRef(null);
     const startRef = useRef(null);
+    const warningIntervalRef = useRef(null);
 
     // Audio Playlist State
     const [playlist, setPlaylist] = useState([
@@ -51,14 +55,79 @@ const PomodoroTimer = () => {
     const handleSessionComplete = useCallback(async () => {
         if (!user || (!mode.label.includes('Focus') && !mode.isCustom)) return;
         const today = new Date().toISOString().split('T')[0];
+        
+        // Double XP for hardcore mode!
+        const xpToAward = isHardcore ? currentDuration * 2 : currentDuration;
+        
         await logPomodoroSession(user.uid, {
             taskTitle: label || (mode.isCustom ? 'Custom Session' : 'Focus Session'),
             duration: currentDuration,
             date: today,
+            isHardcore: isHardcore
         });
-        await awardXP(user.uid, currentDuration);
+        await awardXP(user.uid, xpToAward);
         await updateStreak(user.uid);
-    }, [user, modeIdx, label, currentDuration, mode]);
+        await updateChallengeProgress(user.uid, 'pomodoro', 1);
+        
+        if (isHardcore) {
+            alert(`Hardcore Session Complete! You earned double XP (${xpToAward} XP) 👑`);
+        }
+    }, [user, modeIdx, label, currentDuration, mode, isHardcore]);
+
+    // Hardcore Mode Blur Detection
+    useEffect(() => {
+        if (!running || !isHardcore) {
+            setHardcoreWarning(false);
+            clearInterval(warningIntervalRef.current);
+            return;
+        }
+
+        const handleBlur = () => {
+            // User left the tab/window!
+            if (minimized) return; // Be forgiving if they specifically minimized the widget
+            setHardcoreWarning(true);
+            setHardcoreCountdown(10);
+            
+            clearInterval(warningIntervalRef.current);
+            warningIntervalRef.current = setInterval(() => {
+                setHardcoreCountdown(prev => {
+                    if (prev <= 1) {
+                        // Hardcore FAILURE!
+                        clearInterval(warningIntervalRef.current);
+                        clearInterval(intervalRef.current);
+                        setRunning(false);
+                        setIsAudioPlaying(false);
+                        setHardcoreWarning(false);
+                        setSeconds(currentDuration * 60); // Reset timer
+                        alert("Hardcore Session Failed! You left the tab for too long. No XP awarded. 💀");
+                        return 0;
+                    }
+                    return prev - 1;
+                });
+            }, 1000);
+        };
+
+        const handleFocus = () => {
+            // User returned!
+            setHardcoreWarning(false);
+            clearInterval(warningIntervalRef.current);
+        };
+
+        // Listen for standard visibility change (tab switching) or window blur (minimizing browser/clicking other monitor)
+        document.addEventListener('visibilitychange', () => {
+            if (document.hidden) handleBlur();
+            else handleFocus();
+        });
+        window.addEventListener('blur', handleBlur);
+        window.addEventListener('focus', handleFocus);
+
+        return () => {
+            clearInterval(warningIntervalRef.current);
+            document.removeEventListener('visibilitychange', handleBlur);
+            window.removeEventListener('blur', handleBlur);
+            window.removeEventListener('focus', handleFocus);
+        };
+    }, [running, isHardcore, minimized, currentDuration]);
 
     useEffect(() => {
         // Tab Title Sync
@@ -208,7 +277,18 @@ const PomodoroTimer = () => {
     }
 
     return (
-        <div className={`pomo - widget ${isZenMode ? 'zen-mode-active' : ''} `}>
+        <>
+            {/* Hardcore Warning Overlay */}
+            {hardcoreWarning && isHardcore && (
+                <div className="hardcore-overlay">
+                    <h1>⚠️ GET BACK TO WORK! ⚠️</h1>
+                    <p>Hardcore mode detects you left the window.</p>
+                    <div className="hardcore-countdown">{hardcoreCountdown}s</div>
+                    <p>Return to the app or your session will fail!</p>
+                </div>
+            )}
+            
+            <div className={`pomo-widget ${isZenMode ? 'zen-mode-active' : ''} ${isHardcore && running ? 'pomo-hardcore' : ''}`}>
             <div className="pomo-header">
                 <span className="pomo-title">🍅 Pomodoro</span>
                 <div style={{ display: 'flex', gap: '8px' }}>
@@ -223,12 +303,22 @@ const PomodoroTimer = () => {
                 {MODES.map((m, i) => (
                     <button
                         key={i}
-                        className={`pomo - mode - tab ${modeIdx === i ? 'active' : ''} `}
+                        className={`pomo-mode-tab ${modeIdx === i ? 'active' : ''}`}
                         onClick={() => switchMode(i)}
                     >
                         {m.label}
                     </button>
                 ))}
+            </div>
+
+            <div className="pomo-hardcore-toggle" style={{ display: 'flex', justifyContent: 'center', marginBottom: '16px', gap: '8px', alignItems: 'center' }}>
+                <span style={{ fontSize: '0.8rem', fontWeight: 600, color: isHardcore ? 'var(--error)' : 'var(--text-secondary)' }}>
+                    💀 Hardcore Mode (2x XP)
+                </span>
+                <label className="theme-switch" style={{ margin: 0 }}>
+                    <input type="checkbox" checked={isHardcore} onChange={(e) => setIsHardcore(e.target.checked)} disabled={running} />
+                    <span className="slider round"></span>
+                </label>
             </div>
 
             {mode.isCustom && (
@@ -284,7 +374,7 @@ const PomodoroTimer = () => {
                 <button className="pomo-play-btn" onClick={() => setRunning(r => !r)}>
                     {running ? <FiPause size={22} /> : <FiPlay size={22} />}
                 </button>
-                <button className={`pomo - icon - btn ${isAudioPlaying ? 'active-audio' : ''} `} onClick={() => setIsAudioPlaying(!isAudioPlaying)}>
+                <button className={`pomo-icon-btn ${isAudioPlaying ? 'active-audio' : ''}`} onClick={() => setIsAudioPlaying(!isAudioPlaying)}>
                     {isAudioPlaying ? <FiVolume2 /> : <FiVolumeX />}
                 </button>
             </div>
@@ -301,7 +391,7 @@ const PomodoroTimer = () => {
                 {showPlaylist && (
                     <div className="pomo-playlist">
                         <div className="pomo-playlist-controls">
-                            <button className={`pomo - playlist - btn ${repeatMode ? 'active' : ''} `} onClick={() => setRepeatMode(!repeatMode)} title="Repeat Track">
+                            <button className={`pomo-playlist-btn ${repeatMode ? 'active' : ''}`} onClick={() => setRepeatMode(!repeatMode)} title="Repeat Track">
                                 <FiRepeat />
                             </button>
                             <button className="pomo-playlist-btn" onClick={nextTrack} title="Next Track">
@@ -313,7 +403,7 @@ const PomodoroTimer = () => {
                             {playlist.map((track, index) => (
                                 <div
                                     key={track.id}
-                                    className={`pomo - track - item ${index === currentTrackIndex ? 'playing' : ''} `}
+                                    className={`pomo-track-item ${index === currentTrackIndex ? 'playing' : ''}`}
                                     draggable
                                     onDragStart={(e) => dragStart(e, index)}
                                     onDragEnter={(e) => dragEnter(e, index)}
@@ -340,6 +430,7 @@ const PomodoroTimer = () => {
                 onEnded={handleTrackEnded}
             />
         </div>
+        </>
     );
 };
 

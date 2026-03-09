@@ -178,3 +178,31 @@
         padding: 24px;
     }
 }
+
+/* Challenge Cards */
+.stats-challenge-card {
+    background: var(--card);
+    border-radius: 16px;
+    padding: 20px;
+    border: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    box-shadow: var(--shadow-sm);
+    transition: all 0.2s ease;
+}
+
+.stats-challenge-card.complete {
+    border-color: #10b981;
+    background: rgba(16, 185, 129, 0.05);
+}
+
+.stats-challenge-card.claimed {
+    opacity: 0.6;
+    filter: grayscale(0.5);
+    border-style: dashed;
+}
+
+.stats-challenge-info {
+    flex: 1;
+}

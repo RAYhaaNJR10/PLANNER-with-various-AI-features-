@@ -418,3 +418,115 @@
     right: 40px;
     width: 300px;
 }
+
+/* Hardcore Mode Styles */
+.pomo-hardcore {
+    box-shadow: 0 8px 40px rgba(220, 38, 38, 0.4);
+    border-color: rgba(220, 38, 38, 0.5);
+    animation: hardcorePulse 2s infinite;
+}
+
+@keyframes hardcorePulse {
+    0% { box-shadow: 0 0 15px rgba(220, 38, 38, 0.3); }
+    50% { box-shadow: 0 0 35px rgba(220, 38, 38, 0.8); }
+    100% { box-shadow: 0 0 15px rgba(220, 38, 38, 0.3); }
+}
+
+.hardcore-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(15, 15, 20, 0.95);
+    z-index: 99999;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    color: var(--error);
+    text-align: center;
+    backdrop-filter: blur(10px);
+}
+
+.hardcore-overlay h1 {
+    font-size: 3rem;
+    font-weight: 900;
+    margin-bottom: 20px;
+    animation: shake 0.5s infinite;
+}
+
+.hardcore-countdown {
+    font-size: 8rem;
+    font-weight: 900;
+    color: white;
+    text-shadow: 0 0 30px var(--error);
+    margin: 20px 0;
+}
+
+@keyframes shake {
+    0% { transform: translateX(0); }
+    25% { transform: translateX(-5px); }
+    50% { transform: translateX(5px); }
+    75% { transform: translateX(-5px); }
+    100% { transform: translateX(0); }
+}
+
+/* Custom Toggle Switch for Hardcore */
+.theme-switch {
+  position: relative;
+  display: inline-block;
+  width: 44px;
+  height: 24px;
+}
+
+.theme-switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: var(--border);
+  transition: .4s;
+}
+
+.slider:before {
+  position: absolute;
+  content: "";
+  height: 18px;
+  width: 18px;
+  left: 3px;
+  bottom: 3px;
+  background-color: white;
+  transition: .4s;
+}
+
+input:checked + .slider {
+  background-color: var(--error);
+}
+
+input:disabled + .slider {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+input:checked + .slider:before {
+  transform: translateX(20px);
+}
+
+.slider.round {
+  border-radius: 34px;
+}
+
+.slider.round:before {
+  border-radius: 50%;
+}

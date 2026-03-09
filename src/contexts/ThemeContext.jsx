@@ -6,9 +6,9 @@ const ThemeContext = createContext();
 export const useTheme = () => useContext(ThemeContext);
 
 export const ThemeProvider = ({ children }) => {
-    const [isDark, setIsDark] = useState(() => {
+    const [theme, setTheme] = useState(() => {
         const saved = localStorage.getItem('planner-theme');
-        return saved ? saved === 'dark' : false;
+        return saved || 'light';
     });
 
     const [accentColor, setAccentColor] = useState(() => {
@@ -16,9 +16,9 @@ export const ThemeProvider = ({ children }) => {
     });
 
     useEffect(() => {
-        document.documentElement.setAttribute('data-theme', isDark ? 'dark' : 'light');
-        localStorage.setItem('planner-theme', isDark ? 'dark' : 'light');
-    }, [isDark]);
+        document.documentElement.setAttribute('data-theme', theme);
+        localStorage.setItem('planner-theme', theme);
+    }, [theme]);
 
     useEffect(() => {
         document.documentElement.style.setProperty('--accent', accentColor);
@@ -28,10 +28,13 @@ export const ThemeProvider = ({ children }) => {
         localStorage.setItem('planner-accent', accentColor);
     }, [accentColor]);
 
-    const toggleTheme = () => setIsDark((prev) => !prev);
+    const toggleTheme = () => setTheme((prev) => prev === 'light' ? 'dark' : 'light');
+
+    // Backward compatibility for components checking isDark
+    const isDark = theme !== 'light';
 
     return (
-        <ThemeContext.Provider value={{ isDark, toggleTheme, accentColor, setAccentColor }}>
+        <ThemeContext.Provider value={{ theme, setTheme, isDark, toggleTheme, accentColor, setAccentColor }}>
             {children}
         </ThemeContext.Provider>
     );

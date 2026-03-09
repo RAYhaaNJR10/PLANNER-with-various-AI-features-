@@ -5,7 +5,7 @@ import { extractTextFromPDF } from '../services/pdfService';
 import { extractSubjectsFromText, generateQuizForTopic, generateFullCourse } from '../services/geminiService';
 import { shareSubject } from '../services/shareService';
 import { awardXP, updateStreak } from '../services/gamificationService';
-import { addTask } from '../services/taskService';
+import { addTask, deleteTasksBySubject } from '../services/taskService';
 import { FiCheck, FiMoreVertical, FiTrash2, FiPlus, FiChevronDown, FiChevronRight, FiMove, FiCalendar, FiShare2, FiHelpCircle, FiX, FiUpload, FiFile } from 'react-icons/fi';
 import './SubjectTracker.css';
 
@@ -582,6 +582,7 @@ const SubjectCard = ({ subject, userId, expanded, onToggle, onDelete, onStartQui
 
     // Auto Schedule State
     const [showSchedule, setShowSchedule] = useState(false);
+    const [startDate, setStartDate] = useState(new Date().toISOString().split('T')[0]);
     const [targetDate, setTargetDate] = useState('');
     const [scheduling, setScheduling] = useState(false);
 
@@ -624,7 +625,7 @@ const SubjectCard = ({ subject, userId, expanded, onToggle, onDelete, onStartQui
     };
 
     const handleAutoSchedule = async () => {
-        if (!targetDate) return;
+        if (!targetDate || !startDate) return;
 
         const uncompleted = topics.filter(t => !t.completed);
         if (uncompleted.length === 0) {
@@ -633,10 +634,15 @@ const SubjectCard = ({ subject, userId, expanded, onToggle, onDelete, onStartQui
             return;
         }
 
-        const start = new Date();
+        const start = new Date(startDate);
         start.setHours(0, 0, 0, 0);
         const end = new Date(targetDate);
         end.setHours(23, 59, 59, 999);
+
+        if (end < start) {
+            alert('End date must be after the start date.');
+            return;
+        }
 
         // Calculate total days between now and target
         const MS_PER_DAY = 1000 * 60 * 60 * 24;
@@ -644,6 +650,9 @@ const SubjectCard = ({ subject, userId, expanded, onToggle, onDelete, onStartQui
 
         setScheduling(true);
         try {
+            // Clear old tasks before scheduling new ones
+            await deleteTasksBySubject(userId, subject.id);
+
             // Distribute uniformly
             for (let i = 0; i < uncompleted.length; i++) {
                 const topic = uncompleted[i];
@@ -802,24 +811,33 @@ const SubjectCard = ({ subject, userId, expanded, onToggle, onDelete, onStartQui
                             </div>
                             <div className="label-form-content" style={{ padding: '0 0 16px 0' }}>
                                 <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: '12px' }}>
-                                    Pick an exam/end date. We will evenly distribute your <strong>{topics.filter(t => !t.completed).length}</strong> remaining topics across your daily calendar tasks.
+                                    Pick a start date and an exam/end date. We will evenly distribute your <strong>{topics.filter(t => !t.completed).length}</strong> remaining topics across your daily calendar tasks, replacing any previously scheduled tasks for this subject.
                                 </p>
                                 <div className="form-group">
+                                    <label className="form-label" style={{ fontSize: '0.8rem', marginBottom: '4px' }}>Start Date</label>
+                                    <input
+                                        type="date"
+                                        className="form-input"
+                                        value={startDate}
+                                        onChange={(e) => setStartDate(e.target.value)}
+                                        style={{ marginBottom: '12px' }}
+                                    />
+                                    <label className="form-label" style={{ fontSize: '0.8rem', marginBottom: '4px' }}>End Date (Exam)</label>
                                     <input
                                         type="date"
                                         className="form-input"
                                         value={targetDate}
-                                        min={new Date().toISOString().split('T')[0]}
+                                        min={startDate}
                                         onChange={(e) => setTargetDate(e.target.value)}
                                     />
                                 </div>
                                 <button
                                     className="btn btn-primary"
                                     style={{ width: '100%' }}
-                                    disabled={!targetDate || scheduling}
+                                    disabled={!targetDate || !startDate || scheduling}
                                     onClick={handleAutoSchedule}
                                 >
-                                    {scheduling ? 'Scheduling...' : 'Schedule Topics'}
+                                    {scheduling ? 'Scheduling...' : 'Schedule / Reschedule'}
                                 </button>
                             </div>
                         </div>

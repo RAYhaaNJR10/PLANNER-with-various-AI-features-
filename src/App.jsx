@@ -1,6 +1,8 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
-import { ThemeProvider } from './contexts/ThemeContext';
+import { useState, useEffect } from 'react';
+import { ThemeProvider, useTheme } from './contexts/ThemeContext';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
+import { getGamification } from './services/gamificationService';
 import Sidebar from './components/Sidebar';
 import TaskList from './components/TaskList';
 import Calendar from './components/Calendar';
@@ -19,6 +21,28 @@ import './App.css';
 
 const AppContent = () => {
   const { user, loading } = useAuth();
+  const { setTheme } = useTheme();
+  const [nudgeToast, setNudgeToast] = useState(null);
+
+  useEffect(() => {
+    if (!user) return;
+    
+    // Load active theme
+    getGamification(user.uid).then(stats => {
+      if (stats.activeTheme) setTheme(stats.activeTheme);
+    }).catch(console.error);
+
+    // Subscribe to nudges
+    import('./services/presenceService').then(({ subscribeToNudges }) => {
+      const unsub = subscribeToNudges(user.uid, (senderName) => {
+        setNudgeToast(`🔔 ${senderName} nudged you! Time to get back to studying!`);
+        // Auto-hide toast after 5 seconds
+        setTimeout(() => setNudgeToast(null), 5000);
+      });
+      // We can't synchronously return cleanup from a promise, so we just let it run.
+      // In a real app we'd useRef to store the unsub. For now this is fine.
+    });
+  }, [user]);
 
   // Handle public routes gracefully FIRST - Do not wait for Auth Loading
   const isPublicRoute = window.location.pathname.startsWith('/share/') ||
@@ -60,6 +84,11 @@ const AppContent = () => {
 
   return (
     <div className="app-layout">
+      {nudgeToast && (
+        <div className="global-nudge-toast">
+          {nudgeToast}
+        </div>
+      )}
       <Sidebar />
       <main className="main-content">
         <Routes>

@@ -1,14 +1,24 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
-import { getGamification, addStreakFreeze } from '../services/gamificationService';
+import { useTheme } from '../contexts/ThemeContext';
+import { getGamification, addStreakFreeze, setActiveTheme } from '../services/gamificationService';
 import { FiShoppingCart, FiAlertCircle } from 'react-icons/fi';
 import './Shop.css';
 
 const FREEZE_COST = 500;
 
+const THEMES = [
+    { id: 'light', name: 'Light Mode', emoji: '☀️', reqLevel: 1 },
+    { id: 'dark', name: 'Dark Mode', emoji: '🌙', reqLevel: 1 },
+    { id: 'midnight', name: 'Midnight', emoji: '🌌', reqLevel: 10 },
+    { id: 'forest', name: 'Deep Forest', emoji: '🌲', reqLevel: 20 },
+    { id: 'neon', name: 'Cyber Neon', emoji: '⚡', reqLevel: 30 }
+];
+
 const Shop = () => {
     const { user } = useAuth();
-    const [stats, setStats] = useState({ xp: 0, streakFreezes: 0 });
+    const { theme, setTheme } = useTheme();
+    const [stats, setStats] = useState({ xp: 0, level: 1, streakFreezes: 0, activeTheme: 'light' });
     const [buying, setBuying] = useState(false);
     const [message, setMessage] = useState(null);
 
@@ -54,6 +64,18 @@ const Shop = () => {
         }
     };
 
+    const handleEquipTheme = async (themeId) => {
+        if (!user) return;
+        try {
+            await setActiveTheme(user.uid, themeId);
+            setTheme(themeId); // Update local context state
+            setStats(prev => ({ ...prev, activeTheme: themeId }));
+            setMessage({ type: 'success', text: `Equipped ${themeId} theme!` });
+        } catch (e) {
+            setMessage({ type: 'error', text: 'Failed to equip theme.' });
+        }
+    };
+
     return (
         <div className="shop-page">
             <div className="page-header">
@@ -79,7 +101,7 @@ const Shop = () => {
                     <div className="shop-item-icon">❄️</div>
                     <div className="shop-item-info">
                         <h3>Streak Freeze</h3>
-                        <p>Missed a day? A Streak Freeze automatically deploys to protect your study streak, keeping it intact.</p>
+                        <p>Missed a day? A Streak Freeze automatically deploys to protect your study streak.</p>
                         <div className="shop-item-status">
                             You currently own: <strong>{stats.streakFreezes || 0}</strong>
                         </div>
@@ -92,30 +114,34 @@ const Shop = () => {
                         {buying ? 'Purchasing...' : `Buy for ${FREEZE_COST} XP`}
                     </button>
                 </div>
+            </div>
 
-                <div className="shop-item-card shop-item-card--locked">
-                    <div className="shop-item-icon">🎨</div>
-                    <div className="shop-item-info">
-                        <h3>Premium Themes</h3>
-                        <p>Unlock exclusive color palettes and animated backgrounds.</p>
-                        <div className="shop-item-status">Coming Soon</div>
-                    </div>
-                    <button className="btn btn-ghost shop-buy-btn" disabled>
-                        Locked
-                    </button>
-                </div>
+            <h2 className="shop-section-title" style={{ marginTop: '40px', marginBottom: '20px', fontSize: '1.4rem' }}>🎨 Unlockable Themes</h2>
+            <div className="shop-grid">
+                {THEMES.map(t => {
+                    const isUnlocked = stats.level >= t.reqLevel;
+                    const isEquipped = theme === t.id;
 
-                <div className="shop-item-card shop-item-card--locked">
-                    <div className="shop-item-icon">👑</div>
-                    <div className="shop-item-info">
-                        <h3>Profile Titles</h3>
-                        <p>Display a custom prestigious title next to your name on the leaderboard.</p>
-                        <div className="shop-item-status">Coming Soon</div>
-                    </div>
-                    <button className="btn btn-ghost shop-buy-btn" disabled>
-                        Locked
-                    </button>
-                </div>
+                    return (
+                        <div key={t.id} className={`shop-item-card ${!isUnlocked ? 'shop-item-card--locked' : ''} ${isEquipped ? 'shop-item-card--equipped' : ''}`}>
+                            <div className="shop-item-icon">{t.emoji}</div>
+                            <div className="shop-item-info">
+                                <h3>{t.name}</h3>
+                                <p>Unlocks at Level {t.reqLevel}</p>
+                                <div className="shop-item-status">
+                                    {isEquipped ? <strong style={{color: 'var(--accent)'}}>Equipped</strong> : (isUnlocked ? 'Unlocked' : 'Locked')}
+                                </div>
+                            </div>
+                            <button 
+                                className={`btn shop-buy-btn ${isEquipped ? 'btn-ghost' : 'btn-primary'}`} 
+                                disabled={!isUnlocked || isEquipped}
+                                onClick={() => handleEquipTheme(t.id)}
+                            >
+                                {isEquipped ? 'Active' : (isUnlocked ? 'Equip' : `Requires Lvl ${t.reqLevel}`)}
+                            </button>
+                        </div>
+                    );
+                })}
             </div>
         </div>
     );

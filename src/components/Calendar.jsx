@@ -17,12 +17,13 @@ import { useAuth } from '../contexts/AuthContext';
 import { getPendingTasks, subscribeToAllTasks } from '../services/taskService';
 import { subscribeToLabels } from '../services/labelService';
 import { exportTasksToGoogleCalendar } from '../services/calendarService';
+import { getCalendarAccessToken } from '../services/auth';
 import './Calendar.css';
 
 const Calendar = () => {
     const [currentMonth, setCurrentMonth] = useState(new Date());
     const navigate = useNavigate();
-    const { user, calendarToken } = useAuth();
+    const { user, calendarToken, saveCalendarToken } = useAuth();
     const [syncing, setSyncing] = useState(false);
 
     const [tasks, setTasks] = useState([]);
@@ -45,21 +46,29 @@ const Calendar = () => {
     const getLabel = (labelId) => labels.find(l => l.id === labelId);
 
     const handleSync = async () => {
-        if (!calendarToken) {
-            alert('Please sign out and sign back in to grant Google Calendar permissions.');
-            return;
-        }
         setSyncing(true);
         try {
-            const tasks = await getPendingTasks(user.uid);
-            if (tasks.length === 0) {
+            let activeToken = calendarToken;
+
+            if (!activeToken) {
+                // Fetch a new token right now without signing out!
+                activeToken = await getCalendarAccessToken();
+                saveCalendarToken(activeToken); 
+            }
+
+            const pending = await getPendingTasks(user.uid);
+            if (pending.length === 0) {
                 alert('No pending tasks to sync!');
                 return;
             }
-            const { success, failed } = await exportTasksToGoogleCalendar(tasks, calendarToken);
+            const { success, failed } = await exportTasksToGoogleCalendar(pending, activeToken);
             alert(`✅ Synced ${success} tasks to Google Calendar! ${failed > 0 ? `(${failed} failed)` : ''}`);
         } catch (e) {
-            alert(e.message);
+            console.error("Calendar Sync Error:", e);
+            if (e.code === 'auth/popup-closed-by-user' || e.code === 'auth/cancelled-popup-request') {
+                return; // User canceled the popup, just ignore
+            }
+            alert(`Failed to sync calendar: ${e.message}`);
         } finally {
             setSyncing(false);
         }
@@ -165,9 +174,9 @@ const Calendar = () => {
                     className="btn btn-primary"
                     onClick={handleSync}
                     disabled={syncing}
-                    title={!calendarToken ? "Sign out and sign in again to enable Google Calendar Sync" : "Export your pending tasks to Google Calendar"}
+                    title="Export your pending tasks to Google Calendar"
                 >
-                    <FiCloud /> {syncing ? 'Syncing...' : 'Sync to GCal'}
+                    <FiCloud /> {syncing ? 'Syncing...' : (!calendarToken ? 'Connect GCal' : 'Sync to GCal')}
                 </button>
             </div>
             <div className="cal-container">

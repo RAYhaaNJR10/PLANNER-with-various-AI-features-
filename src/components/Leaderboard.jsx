@@ -1,8 +1,9 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { createGroup, joinGroup, getUserGroups, getGroupLeaderboard } from '../services/groupService';
-import { subscribeToGroupPresence } from '../services/presenceService';
-import { FiUsers, FiPlus, FiUserPlus, FiAward, FiCopy, FiClock } from 'react-icons/fi';
+import { subscribeToGroupPresence, sendNudge } from '../services/presenceService';
+import { subscribeToGroupMessages, sendMessage } from '../services/chatService';
+import { FiUsers, FiPlus, FiUserPlus, FiAward, FiCopy, FiClock, FiBell, FiMessageSquare, FiSend, FiSmile } from 'react-icons/fi';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 import './Leaderboard.css';
 
@@ -14,6 +15,24 @@ const Leaderboard = () => {
     const [presence, setPresence] = useState({});
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
+
+    // Chat
+    const [activeTab, setActiveTab] = useState('rankings'); // 'rankings' or 'chat'
+    const [messages, setMessages] = useState([]);
+    const [newMessage, setNewMessage] = useState('');
+    const [unreadCount, setUnreadCount] = useState(0);
+    const prevMessagesLength = useRef(0);
+
+    const EMOJI_CATEGORIES = [
+        { name: 'Smileys', emojis: ['😊', '😂', '🤣', '😍', '😎', '😜', '😇', '🤔', '🥳', '🤩'] },
+        { name: 'Gestures', emojis: ['👍', '🙌', '👏', '🔥', '❤️', '💯', '🤝', '✌️', '💪', '✨'] },
+        { name: 'Study', emojis: ['📚', '💡', '🧠', '🎯', '✍️', '📖', '📝', '🎓', '🧪', '🎨'] },
+        { name: 'Celebrate', emojis: ['🎉', '🎈', '🎊', '🎀', '🌟', '🏆', '🌈', '🧨', '🥂', '🍰'] },
+        { name: 'Objects', emojis: ['💻', '📱', '⌚️', '📷', '🕹', '⌛️', '🎁', '💎', '🔑', '🏷️'] },
+        { name: 'Symbols', emojis: ['✅', '❌', '⚠️', '🆗', '🆙', '🆒', '🆕', '🆓', '➕', '➖'] }
+    ];
+
+    const [showChatEmojiPicker, setShowChatEmojiPicker] = useState(false);
 
     // Modals
     const [showCreate, setShowCreate] = useState(false);
@@ -79,6 +98,42 @@ const Leaderboard = () => {
         return () => unsubscribe();
     }, [activeGroup]);
 
+    // Subscribe to Group Messages
+    useEffect(() => {
+        if (!activeGroup) {
+            setMessages([]);
+            setUnreadCount(0);
+            prevMessagesLength.current = 0;
+            return;
+        }
+        const unsub = subscribeToGroupMessages(activeGroup.id, (fetchedMessages) => {
+            setMessages(fetchedMessages);
+            if (activeTab !== 'chat' && fetchedMessages.length > prevMessagesLength.current && prevMessagesLength.current !== 0) {
+                // Ignore the initial load (when prev === 0), only notify on new incoming
+                setUnreadCount(prev => prev + (fetchedMessages.length - prevMessagesLength.current));
+            }
+            prevMessagesLength.current = fetchedMessages.length;
+        });
+        return () => unsub();
+    }, [activeGroup, activeTab]);
+
+    useEffect(() => {
+        if (activeTab === 'chat') {
+            setUnreadCount(0);
+        }
+    }, [activeTab]);
+
+    const handleSendMessage = async (e) => {
+        e.preventDefault();
+        if (!newMessage.trim() || !activeGroup) return;
+        try {
+            await sendMessage(activeGroup.id, user, newMessage);
+            setNewMessage('');
+        } catch (err) {
+            console.error('Failed to send message', err);
+        }
+    };
+
     const handleCreateGroup = async () => {
         if (!groupName.trim()) return;
         try {
@@ -110,6 +165,17 @@ const Leaderboard = () => {
         if (!activeGroup) return;
         navigator.clipboard.writeText(activeGroup.joinCode);
         alert(`Join code ${activeGroup.joinCode} copied to clipboard! Share it with your friends.`);
+    };
+
+    const handleSendNudge = async (recipientId) => {
+        if (!user) return;
+        try {
+            await sendNudge(recipientId, user.displayName);
+            alert('Nudge sent successfully! 🔔');
+        } catch (e) {
+            console.error('Failed to send nudge', e);
+            alert('Failed to send nudge.');
+        }
     };
 
     if (loading) {
@@ -220,7 +286,7 @@ const Leaderboard = () => {
                                 <div>
                                     <h2 className="leaderboard-group-name">{activeGroup.name}</h2>
                                     <p className="leaderboard-group-meta">
-                                        Join Code: <strong>{activeGroup.joinCode}</strong>
+                                        Join Code: <strong>{activeGroup.joinCode}</strong> • {leaderboard.length} Member{leaderboard.length === 1 ? '' : 's'} • {leaderboard.reduce((acc, m) => acc + (m.focusMinutes || 0), 0)} Total Focus Mins
                                     </p>
                                 </div>
                                 <button className="btn btn-ghost btn-sm" onClick={copyJoinCode}>
@@ -228,7 +294,120 @@ const Leaderboard = () => {
                                 </button>
                             </div>
 
-                            {refreshing ? (
+                            <div className="leaderboard-tabs" style={{ display: 'flex', gap: '8px', marginBottom: '20px', borderBottom: '1px solid var(--border)', paddingBottom: '8px', overflowX: 'auto' }}>
+                                <button 
+                                    className="btn btn-ghost"
+                                    style={{ color: activeTab === 'rankings' ? 'var(--accent)' : 'var(--text-secondary)', borderBottom: activeTab === 'rankings' ? '2px solid var(--accent)' : 'none', borderRadius: 0, paddingBottom: '12px' }}
+                                    onClick={() => setActiveTab('rankings')}
+                                >
+                                    <FiAward /> Rankings
+                                </button>
+                                <button 
+                                    className="btn btn-ghost"
+                                    style={{ position: 'relative', color: activeTab === 'chat' ? 'var(--accent)' : 'var(--text-secondary)', borderBottom: activeTab === 'chat' ? '2px solid var(--accent)' : 'none', borderRadius: 0, paddingBottom: '12px' }}
+                                    onClick={() => setActiveTab('chat')}
+                                >
+                                    <FiMessageSquare /> Chat
+                                    {unreadCount > 0 && (
+                                        <span style={{ position: 'absolute', top: '-4px', right: '-12px', background: '#E74C3C', color: 'white', fontSize: '10px', fontWeight: 'bold', padding: '2px 6px', borderRadius: '10px' }}>
+                                            {unreadCount}
+                                        </span>
+                                    )}
+                                </button>
+                            </div>
+
+                            {activeTab === 'chat' ? (
+                                <div className="group-chat-container">
+                                    <div className="chat-messages" style={{ display: 'flex', flexDirection: 'column', gap: '12px', height: '400px', overflowY: 'auto', padding: '16px', border: '1px solid var(--border)', borderRadius: '12px', background: 'var(--bg)', marginBottom: '16px' }}>
+                                        {messages.length === 0 ? (
+                                            <div className="empty-state" style={{ minHeight: '200px', margin: 'auto' }}>
+                                                <span className="empty-emoji">💬</span>
+                                                <p>No messages yet. Say hi!</p>
+                                            </div>
+                                        ) : (
+                                            messages.map(msg => {
+                                                const isMe = msg.uid === user.uid;
+                                                return (
+                                                    <div key={msg.id} className={`chat-message ${isMe ? 'chat-message--me' : ''}`} style={{ display: 'flex', gap: '8px', alignSelf: isMe ? 'flex-end' : 'flex-start', maxWidth: '85%', flexDirection: isMe ? 'row-reverse' : 'row' }}>
+                                                        {!isMe && (
+                                                            <img src={msg.photoURL || `https://ui-avatars.com/api/?name=${encodeURIComponent(msg.displayName)}`} alt={msg.displayName} className="chat-avatar" style={{ width: '32px', height: '32px', borderRadius: '50%' }} />
+                                                        )}
+                                                        <div className="chat-bubble-wrapper" style={{ display: 'flex', flexDirection: 'column', alignItems: isMe ? 'flex-end' : 'flex-start' }}>
+                                                            {!isMe && <span className="chat-sender" style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginBottom: '4px', marginLeft: '4px' }}>{msg.displayName}</span>}
+                                                            <div className="chat-bubble" style={{ padding: '10px 14px', borderRadius: '16px', background: isMe ? 'var(--accent)' : 'var(--border)', color: isMe ? '#fff' : 'var(--text)', borderBottomRightRadius: isMe ? '4px' : '16px', borderTopLeftRadius: isMe ? '16px' : '4px', wordBreak: 'break-word' }}>
+                                                                {msg.text}
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                );
+                                            })
+                                        )}
+                                    </div>
+                                    <div style={{ position: 'relative' }}>
+                                        <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                                            <button 
+                                                type="button" 
+                                                className="btn btn-ghost"
+                                                onClick={() => setShowChatEmojiPicker(!showChatEmojiPicker)}
+                                                style={{ padding: '8px' }}
+                                                title="Emoji picker"
+                                            >
+                                                <FiSmile size={20} />
+                                            </button>
+                                            <form className="chat-input-form" onSubmit={handleSendMessage} style={{ display: 'flex', gap: '8px', flex: 1 }}>
+                                                <input
+                                                    type="text"
+                                                    className="form-input"
+                                                    placeholder="Message the group..."
+                                                    value={newMessage}
+                                                    onChange={(e) => setNewMessage(e.target.value)}
+                                                    style={{ flex: 1 }}
+                                                />
+                                                <button type="submit" className="btn btn-primary" disabled={!newMessage.trim()}>
+                                                    <FiSend />
+                                                </button>
+                                            </form>
+                                        </div>
+
+                                        {showChatEmojiPicker && (
+                                            <div style={{
+                                                position: 'absolute', bottom: '100%', left: '0', zIndex: 100,
+                                                background: 'var(--card)', border: '1px solid var(--border)',
+                                                borderRadius: '12px', padding: '16px', boxShadow: 'var(--shadow-lg)',
+                                                marginBottom: '12px', width: '300px'
+                                            }}>
+                                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+                                                    <h4 style={{ margin: 0, fontSize: '0.9rem' }}>Select Emoji</h4>
+                                                    <button className="modal-close" onClick={() => setShowChatEmojiPicker(false)}>×</button>
+                                                </div>
+                                                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', maxHeight: '200px', overflowY: 'auto' }}>
+                                                    {EMOJI_CATEGORIES.map(cat => (
+                                                        <div key={cat.name}>
+                                                            <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginBottom: '4px', textTransform: 'uppercase' }}>{cat.name}</div>
+                                                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: '4px' }}>
+                                                                {cat.emojis.map(emoji => (
+                                                                    <button
+                                                                        key={emoji}
+                                                                        type="button"
+                                                                        onClick={() => {
+                                                                            setNewMessage(prev => prev + emoji);
+                                                                            setShowChatEmojiPicker(false);
+                                                                        }}
+                                                                        style={{ background: 'none', border: 'none', fontSize: '1.25rem', padding: '4px', cursor: 'pointer', borderRadius: '4px' }}
+                                                                        className="hover-bg-subtle"
+                                                                    >
+                                                                        {emoji}
+                                                                    </button>
+                                                                ))}
+                                                            </div>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+                            ) : refreshing ? (
                                 <div style={{ textAlign: 'center', padding: '40px' }}><div className="spinner" /></div>
                             ) : (
                                 <>
@@ -279,10 +458,20 @@ const Leaderboard = () => {
                                                     <div className="rank-info">
                                                         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                                                             <span className="rank-name">{member.displayName} {isMe && '(You)'}</span>
-                                                            {presence[member.uid]?.isStudying && (
+                                                            {presence[member.uid]?.isStudying ? (
                                                                 <span className="presence-tag" title="Currently studying!">
-                                                                    <span className="presence-dot"></span> Focusing on {presence[member.uid].subjectName || 'Task'}
+                                                                    <span className="presence-dot"></span> {presence[member.uid].taskId || presence[member.uid].subjectName || 'In a Focus Session'}
                                                                 </span>
+                                                            ) : (
+                                                                !isMe && presence[member.uid] && (
+                                                                    <button 
+                                                                        className="nudge-btn" 
+                                                                        onClick={() => handleSendNudge(member.uid)}
+                                                                        title={`Send ${member.displayName} a reminder to study!`}
+                                                                    >
+                                                                        <FiBell /> Nudge
+                                                                    </button>
+                                                                )
                                                             )}
                                                         </div>
                                                         <span className="rank-level">Level {member.level}</span>

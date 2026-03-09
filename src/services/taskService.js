@@ -58,6 +58,16 @@ export const deleteTask = async (userId, taskId) => {
     return deleteDoc(ref);
 };
 
+export const deleteTasksBySubject = async (userId, subjectId) => {
+    const ref = getTasksRef(userId);
+    const q = query(ref, where('subjectId', '==', subjectId));
+    const snap = await getDocs(q);
+    
+    // Batch delete would be better, but loop is simple and works for small amounts
+    const deletePromises = snap.docs.map(docSnap => deleteDoc(doc(db, 'users', userId, 'tasks', docSnap.id)));
+    await Promise.all(deletePromises);
+};
+
 export const subscribeToTasksByDate = (userId, dateStr, callback) => {
     const ref = getTasksRef(userId);
 
@@ -88,6 +98,10 @@ export const subscribeToTasksByDate = (userId, dateStr, callback) => {
         });
 
         processed.sort((a, b) => {
+            const aOrder = a.order ?? Number.MAX_SAFE_INTEGER;
+            const bOrder = b.order ?? Number.MAX_SAFE_INTEGER;
+            if (aOrder !== bOrder) return aOrder - bOrder;
+            
             const aTime = a.createdAt?.seconds || 0;
             const bTime = b.createdAt?.seconds || 0;
             return aTime - bTime;
@@ -128,9 +142,41 @@ export const subscribeToAllTasks = (userId, callback) => {
     });
 };
 
+export const subscribeToAssignments = (userId, callback) => {
+    const ref = getTasksRef(userId);
+    const q = query(ref, where('isAssignment', '==', true), where('completed', '==', false));
+    return onSnapshot(q, (snapshot) => {
+        const today = new Date().toISOString().split('T')[0];
+        const assignments = snapshot.docs
+            .map(doc => ({ id: doc.id, ...doc.data() }))
+            .filter(a => !a.dueDate || a.dueDate >= today);
+        
+        // Sort by dueDate primarily (nulls last), then by date
+        assignments.sort((a, b) => {
+            if (a.dueDate && b.dueDate) return a.dueDate.localeCompare(b.dueDate);
+            if (a.dueDate) return -1;
+            if (b.dueDate) return 1;
+            
+            if (!a.date && !b.date) return 0;
+            if (!a.date) return 1;
+            if (!b.date) return -1;
+            return a.date.localeCompare(b.date);
+        });
+        
+        callback(assignments);
+    }, (error) => {
+        console.error('Error listening to assignments:', error);
+    });
+};
+
 export const getPendingTasks = async (userId) => {
     const ref = getTasksRef(userId);
-    const q = query(ref, where('completed', '==', false), where('recurrence', 'in', ['none', undefined, null]));
+    // Firestore `where('in', ...)` does not accept undefined. 
+    // We query for all uncompleted tasks, then filter out daily recurrence in memory.
+    const q = query(ref, where('completed', '==', false));
     const snap = await getDocs(q);
-    return snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    
+    return snap.docs
+        .map(d => ({ id: d.id, ...d.data() }))
+        .filter(t => !t.recurrence || t.recurrence === 'none');
 };

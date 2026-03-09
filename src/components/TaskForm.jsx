@@ -5,18 +5,21 @@ import { addLabel } from '../services/labelService';
 import { FiX, FiPlus } from 'react-icons/fi';
 import './TaskForm.css';
 
-const TaskForm = ({ date, labels, task, onClose }) => {
+const TaskForm = ({ date, labels, task, onClose, isAssignmentMode = false }) => {
     const { user } = useAuth();
     const [title, setTitle] = useState('');
     const [description, setDescription] = useState('');
     const [priority, setPriority] = useState('medium');
     const [recurrence, setRecurrence] = useState('none');
+    const [isAssignment, setIsAssignment] = useState(isAssignmentMode);
+    const [dueDate, setDueDate] = useState('');
     const [labelIds, setLabelIds] = useState([]);
     const [newLabelName, setNewLabelName] = useState('');
     const [newLabelIcon, setNewLabelIcon] = useState('🏷️');
     const [showEmojiPicker, setShowEmojiPicker] = useState(false);
     const [creatingLabel, setCreatingLabel] = useState(false);
     const [saving, setSaving] = useState(false);
+    const [showLabels, setShowLabels] = useState(false);
 
     useEffect(() => {
         if (task) {
@@ -24,6 +27,8 @@ const TaskForm = ({ date, labels, task, onClose }) => {
             setDescription(task.description || '');
             setPriority(task.priority || 'medium');
             setRecurrence(task.recurrence || 'none');
+            setIsAssignment(task.isAssignment || false);
+            setDueDate(task.dueDate || '');
 
             // Handle backwards compatibility with older single labelId string
             if (task.labelIds) setLabelIds(task.labelIds);
@@ -43,6 +48,8 @@ const TaskForm = ({ date, labels, task, onClose }) => {
                 description: description.trim(),
                 priority,
                 recurrence,
+                isAssignment,
+                dueDate: isAssignment ? dueDate : null,
                 labelIds,
                 date,
             };
@@ -177,9 +184,42 @@ const TaskForm = ({ date, labels, task, onClose }) => {
                         </div>
                     </div>
 
+                    <div className="form-row">
+                        <div className="form-group" style={{ flex: 1 }}>
+                            <label className="form-label" style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', textTransform: 'none' }}>
+                                <input
+                                    type="checkbox"
+                                    checked={isAssignment}
+                                    onChange={(e) => setIsAssignment(e.target.checked)}
+                                    style={{ width: '18px', height: '18px', cursor: 'pointer' }}
+                                />
+                                📚 Mark as Assignment
+                            </label>
+                        </div>
+                        {isAssignment && (
+                            <div className="form-group" style={{ flex: 1 }}>
+                                <label className="form-label">Due Date</label>
+                                <input
+                                    type="date"
+                                    className="form-input"
+                                    value={dueDate}
+                                    onChange={(e) => setDueDate(e.target.value)}
+                                    style={{ height: '42px' }}
+                                />
+                            </div>
+                        )}
+                    </div>
+
                     <div className="form-group">
-                        <label className="form-label">Labels</label>
-                        <div className="label-selector">
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                            <label className="form-label" style={{ margin: 0 }}>Labels</label>
+                            <button type="button" className="btn btn-ghost btn-sm" onClick={() => setShowLabels(!showLabels)} style={{ padding: '2px 8px', fontSize: '0.8rem' }}>
+                                {showLabels ? 'Hide Labels' : 'Show Labels'}
+                            </button>
+                        </div>
+                        {showLabels && (
+                            <>
+                                <div className="label-selector">
                             {labels.map((l) => (
                                 <button
                                     key={l.id}
@@ -259,8 +299,10 @@ const TaskForm = ({ date, labels, task, onClose }) => {
                                 disabled={!newLabelName.trim() || creatingLabel}
                             >
                                 {creatingLabel ? '...' : <><FiPlus /> Create</>}
-                            </button>
-                        </div>
+                                </button>
+                            </div>
+                        </>
+                        )}
                     </div>
 
                     <div className="form-actions">

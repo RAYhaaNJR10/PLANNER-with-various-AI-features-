@@ -6,7 +6,11 @@ import {
     serverTimestamp,
     collection,
     query,
-    where
+    where,
+    addDoc,
+    orderBy,
+    limit,
+    deleteDoc
 } from 'firebase/firestore';
 
 // Call this from PomodoroTimer whenever it starts, stops, changes subject, etc.
@@ -69,4 +73,47 @@ export const subscribeToGroupPresence = (memberIds, callback) => {
     return () => {
         unsubs.forEach(fn => fn());
     };
+};
+
+// Social Nudging
+export const sendNudge = async (recipientId, senderName) => {
+    if (!recipientId || !senderName) return;
+    const nudgesRef = collection(db, 'users', recipientId, 'nudges');
+    
+    // Create a temporary document in their nudges subcollection
+    return addDoc(nudgesRef, {
+        senderName,
+        timestamp: serverTimestamp()
+    });
+};
+
+export const subscribeToNudges = (userId, onNudgeReceived) => {
+    if (!userId) {
+        return () => {};
+    }
+
+    const nudgesRef = collection(db, 'users', userId, 'nudges');
+    // Only listen for nudges created recently to avoid spam on login
+    const recentQuery = query(nudgesRef, orderBy('timestamp', 'desc'), limit(1));
+
+    let isInitialLoad = true;
+
+    return onSnapshot(recentQuery, (snapshot) => {
+        if (isInitialLoad) {
+            isInitialLoad = false;
+            return; // Ignore existing ones on mount
+        }
+
+        snapshot.docChanges().forEach(async (change) => {
+            if (change.type === 'added') {
+                const data = change.doc.data();
+                if (data.senderName) {
+                    onNudgeReceived(data.senderName);
+                }
+                // Cleanup: Delete the nudge doc immediately after receiving it
+                // so the subcollection doesn't get flooded over time
+                await deleteDoc(change.doc.ref);
+            }
+        });
+    });
 };

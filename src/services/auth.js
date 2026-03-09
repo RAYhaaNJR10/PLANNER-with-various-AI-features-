@@ -1,4 +1,4 @@
-import { signInWithPopup, GoogleAuthProvider, signOut as firebaseSignOut, onAuthStateChanged } from 'firebase/auth';
+import { signInWithPopup, GoogleAuthProvider, signOut as firebaseSignOut, onAuthStateChanged, reauthenticateWithPopup } from 'firebase/auth';
 import { auth } from '../firebase';
 
 const googleProvider = new GoogleAuthProvider();
@@ -14,6 +14,28 @@ export const signInWithGoogle = async () => {
         return { user: result.user, token };
     } catch (error) {
         console.error('Google sign-in failed:', error);
+        throw error;
+    }
+};
+
+export const getCalendarAccessToken = async () => {
+    try {
+        // Calling signInWithPopup again while logged in re-authenticates the user
+        // and returns a fresh credential, including the specific scopes we requested.
+        googleProvider.setCustomParameters({ prompt: 'consent' });
+        let result;
+        if (auth.currentUser) {
+            result = await reauthenticateWithPopup(auth.currentUser, googleProvider);
+        } else {
+            result = await signInWithPopup(auth, googleProvider);
+        }
+        const credential = GoogleAuthProvider.credentialFromResult(result);
+        if (!credential || !credential.accessToken) {
+            throw new Error('Google did not return an access token. Please check your permissions.');
+        }
+        return credential.accessToken;
+    } catch (error) {
+        console.error('Failed to get new calendar token:', error);
         throw error;
     }
 };
