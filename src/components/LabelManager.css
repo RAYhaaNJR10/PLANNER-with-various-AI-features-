@@ -2,6 +2,65 @@
     animation: fadeIn 0.3s ease;
 }
 
+.labels-toolbar {
+    margin-bottom: 24px;
+    display: flex;
+    justify-content: flex-start;
+}
+
+.search-bar {
+    position: relative;
+    width: 100%;
+    max-width: 400px;
+    display: flex;
+    align-items: center;
+}
+
+.search-icon {
+    position: absolute;
+    left: 14px;
+    color: var(--text-secondary);
+    pointer-events: none;
+    font-size: 1.1rem;
+}
+
+.search-input {
+    width: 100%;
+    padding: 10px 14px 10px 40px;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    background: var(--card);
+    color: var(--text);
+    font-size: 0.95rem;
+    transition: all 0.2s ease;
+}
+
+.search-input:focus {
+    outline: none;
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px var(--accent-shadow);
+}
+
+.search-clear {
+    position: absolute;
+    right: 10px;
+    background: none;
+    border: none;
+    color: var(--text-secondary);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 4px;
+    border-radius: 50%;
+    transition: all 0.2s ease;
+}
+
+.search-clear:hover {
+    background: var(--hover);
+    color: var(--text);
+}
+
 .label-form-card {
     background: var(--card);
     border-radius: 20px;

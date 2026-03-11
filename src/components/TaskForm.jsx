@@ -20,6 +20,7 @@ const TaskForm = ({ date, labels, task, onClose, isAssignmentMode = false }) => 
     const [creatingLabel, setCreatingLabel] = useState(false);
     const [saving, setSaving] = useState(false);
     const [showLabels, setShowLabels] = useState(false);
+    const [labelSearchQuery, setLabelSearchQuery] = useState('');
 
     useEffect(() => {
         if (task) {
@@ -68,13 +69,25 @@ const TaskForm = ({ date, labels, task, onClose, isAssignmentMode = false }) => 
     };
 
     const handleCreateLabel = async () => {
-        if (!newLabelName.trim() || creatingLabel) return;
+        const trimmedName = newLabelName.trim();
+        if (!trimmedName || creatingLabel) return;
+
+        // Check for duplicate name (case-insensitive)
+        const isDuplicate = labels.some(l => 
+            l.name.toLowerCase().trim() === trimmedName.toLowerCase()
+        );
+
+        if (isDuplicate) {
+            alert('A label with this name already exists.');
+            return;
+        }
+
         setCreatingLabel(true);
         try {
             const colors = ['#6C5CE7', '#00B894', '#E17055', '#FDCB6E', '#0984E3', '#FD79A8'];
             const randomColor = colors[Math.floor(Math.random() * colors.length)];
             const newLabel = await addLabel(user.uid, {
-                name: newLabelName.trim(),
+                name: trimmedName,
                 color: randomColor,
                 icon: newLabelIcon
             });
@@ -219,8 +232,20 @@ const TaskForm = ({ date, labels, task, onClose, isAssignmentMode = false }) => 
                         </div>
                         {showLabels && (
                             <>
+                                <div className="label-search-container" style={{ marginBottom: '12px' }}>
+                                    <input
+                                        type="text"
+                                        className="form-input"
+                                        style={{ height: '36px', fontSize: '0.85rem' }}
+                                        placeholder="Search existing labels..."
+                                        value={labelSearchQuery}
+                                        onChange={(e) => setLabelSearchQuery(e.target.value)}
+                                    />
+                                </div>
                                 <div className="label-selector">
-                            {labels.map((l) => (
+                            {labels
+                                .filter(l => l.name.toLowerCase().includes(labelSearchQuery.toLowerCase()))
+                                .map((l) => (
                                 <button
                                     key={l.id}
                                     type="button"

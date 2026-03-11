@@ -1,7 +1,7 @@
 /* eslint-disable react-refresh/only-export-components */
 import { createContext, useContext, useState, useEffect } from 'react';
 import { onAuthChange } from '../services/auth';
-import { seedDefaultLabels } from '../services/labelService';
+import { seedDefaultLabels, cleanupDuplicateLabels } from '../services/labelService';
 
 const AuthContext = createContext();
 
@@ -17,6 +17,7 @@ export const AuthProvider = ({ children }) => {
             if (firebaseUser) {
                 setUser(firebaseUser);
                 await seedDefaultLabels(firebaseUser.uid);
+                await cleanupDuplicateLabels(firebaseUser.uid);
             } else {
                 setUser(null);
                 setCalendarToken(null);

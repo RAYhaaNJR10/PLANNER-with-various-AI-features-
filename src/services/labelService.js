@@ -32,17 +32,43 @@ export const seedDefaultLabels = async (userId) => {
     const ref = getLabelsRef(userId);
     const snap = await getDocs(ref);
     
-    const existingLabels = snap.docs.map(doc => doc.data().name);
+    const existingLabels = snap.docs.map(doc => doc.data().name.toLowerCase().trim());
     
-    // Only add defaults that don't already exist by name
+    // Only add defaults that don't already exist by name (case-insensitive)
     const missingDefaults = DEFAULT_LABELS.filter(
-        defaultLabel => !existingLabels.includes(defaultLabel.name)
+        defaultLabel => !existingLabels.includes(defaultLabel.name.toLowerCase().trim())
     );
 
     if (missingDefaults.length > 0) {
         const promises = missingDefaults.map((label) =>
             addDoc(ref, { ...label, createdAt: serverTimestamp() })
         );
+        await Promise.all(promises);
+    }
+};
+
+export const cleanupDuplicateLabels = async (userId) => {
+    const ref = getLabelsRef(userId);
+    const snap = await getDocs(ref);
+    
+    const seen = new Set();
+    const duplicates = [];
+    
+    // Sort by createdAt to keep the oldest one if possible
+    const docs = snap.docs.map(d => ({ id: d.id, ...d.data() }))
+        .sort((a, b) => (a.createdAt?.seconds || 0) - (b.createdAt?.seconds || 0));
+
+    for (const label of docs) {
+        const normalizedName = label.name.toLowerCase().trim();
+        if (seen.has(normalizedName)) {
+            duplicates.push(label.id);
+        } else {
+            seen.add(normalizedName);
+        }
+    }
+
+    if (duplicates.length > 0) {
+        const promises = duplicates.map(id => deleteDoc(doc(db, 'users', userId, 'labels', id)));
         await Promise.all(promises);
     }
 };

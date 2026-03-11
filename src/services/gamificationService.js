@@ -47,9 +47,28 @@ export const getGamification = async (uid) => {
 export const awardXP = async (uid, amount) => {
     const ref = doc(db, 'users', uid, 'gamification', 'stats');
     const snap = await getDoc(ref);
+    
     if (!snap.exists()) {
-        await setDoc(ref, { xp: amount, level: 1, streak: 0, highestStreak: 0, streakFreezes: 0, lastStreakDate: null });
-        await updateDoc(ref, { xp: increment(amount) });
+        const initialXP = amount;
+        const initialLevel = getLevel(initialXP);
+        await setDoc(ref, { 
+            xp: initialXP, 
+            level: initialLevel, 
+            streak: 0, 
+            highestStreak: 0, 
+            streakFreezes: 0, 
+            lastStreakDate: null,
+            unlockedThemes: ['light', 'dark'],
+            activeTheme: 'light'
+        });
+    } else {
+        const data = snap.data();
+        const newXP = (data.xp || 0) + amount;
+        const newLevel = getLevel(newXP);
+        await updateDoc(ref, { 
+            xp: newXP, 
+            level: newLevel 
+        });
     }
     await updateChallengeProgress(uid, 'xp', amount);
 };

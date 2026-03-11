@@ -6,8 +6,9 @@ import {
     updateLabel,
     deleteLabel,
 } from '../services/labelService';
-import { FiPlus, FiEdit2, FiTrash2, FiX, FiCheck } from 'react-icons/fi';
+import { FiPlus, FiEdit2, FiTrash2, FiX, FiCheck, FiSearch } from 'react-icons/fi';
 import './LabelManager.css';
+import { cleanupDuplicateLabels } from '../services/labelService';
 
 const COLORS = [
     '#6C5CE7', '#00B894', '#E17055', '#FDCB6E', '#D63031',
@@ -38,9 +39,11 @@ const LabelManager = () => {
     const [color, setColor] = useState(COLORS[0]);
     const [icon, setIcon] = useState('📚');
     const [emojiCategory, setEmojiCategory] = useState(ALL_CATEGORIES[0]);
+    const [searchQuery, setSearchQuery] = useState('');
 
     useEffect(() => {
         if (!user) return;
+        cleanupDuplicateLabels(user.uid);
         const unsub = subscribeToLabels(user.uid, setLabels);
         return () => unsub();
     }, [user]);
@@ -55,11 +58,24 @@ const LabelManager = () => {
     };
 
     const handleSubmit = async () => {
-        if (!name.trim()) return;
+        const trimmedName = name.trim();
+        if (!trimmedName) return;
+
+        // Check for duplicate name (case-insensitive)
+        const isDuplicate = labels.some(l => 
+            l.id !== editingId && 
+            l.name.toLowerCase().trim() === trimmedName.toLowerCase()
+        );
+
+        if (isDuplicate) {
+            alert('A label with this name already exists.');
+            return;
+        }
+
         if (editingId) {
-            await updateLabel(user.uid, editingId, { name: name.trim(), color, icon });
+            await updateLabel(user.uid, editingId, { name: trimmedName, color, icon });
         } else {
-            await addLabel(user.uid, { name: name.trim(), color, icon });
+            await addLabel(user.uid, { name: trimmedName, color, icon });
         }
         resetForm();
     };
@@ -88,6 +104,24 @@ const LabelManager = () => {
                 <button className="btn btn-primary" onClick={() => setShowAdd(true)}>
                     <FiPlus /> New Label
                 </button>
+            </div>
+
+            <div className="labels-toolbar">
+                <div className="search-bar">
+                    <FiSearch className="search-icon" />
+                    <input
+                        type="text"
+                        placeholder="Search labels..."
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        className="search-input"
+                    />
+                    {searchQuery && (
+                        <button className="search-clear" onClick={() => setSearchQuery('')}>
+                            <FiX />
+                        </button>
+                    )}
+                </div>
             </div>
 
             {showAdd && (
@@ -164,22 +198,26 @@ const LabelManager = () => {
             )}
 
             <div className="labels-grid">
-                {labels.map((label) => (
-                    <div key={label.id} className="label-card" style={{ borderColor: label.color + '40' }}>
-                        <div className="label-card-icon" style={{ background: label.color + '20' }}>
-                            <span>{label.icon}</span>
+                {labels
+                    .filter(label => 
+                        label.name.toLowerCase().includes(searchQuery.toLowerCase())
+                    )
+                    .map((label) => (
+                        <div key={label.id} className="label-card" style={{ borderColor: label.color + '40' }}>
+                            <div className="label-card-icon" style={{ background: label.color + '20' }}>
+                                <span>{label.icon}</span>
+                            </div>
+                            <h3 className="label-card-name" style={{ color: label.color }}>{label.name}</h3>
+                            <div className="label-card-actions">
+                                <button className="task-action-btn" onClick={() => handleEdit(label)}>
+                                    <FiEdit2 />
+                                </button>
+                                <button className="task-action-btn task-action-btn--danger" onClick={() => handleDelete(label.id)}>
+                                    <FiTrash2 />
+                                </button>
+                            </div>
                         </div>
-                        <h3 className="label-card-name" style={{ color: label.color }}>{label.name}</h3>
-                        <div className="label-card-actions">
-                            <button className="task-action-btn" onClick={() => handleEdit(label)}>
-                                <FiEdit2 />
-                            </button>
-                            <button className="task-action-btn task-action-btn--danger" onClick={() => handleDelete(label.id)}>
-                                <FiTrash2 />
-                            </button>
-                        </div>
-                    </div>
-                ))}
+                    ))}
             </div>
         </div>
     );
